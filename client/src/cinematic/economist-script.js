@@ -1,17 +1,10 @@
 /**
  * 經濟學家模組《信號 · 2007》— Chapter 0
  *
- * 玩家身份：剛入職的研究助理，輔佐首席經濟學家王博士
- * 時間軸：2006 Q4 → 2007 → 2008 Sept 15（雷曼）→ 2009
- *
- * 核心 behavioral probe：
- *   - 玩家在第幾場開始感到不安？
- *   - 面對老闆壓力是否隱藏數據？
- *   - 危機爆發時的第一反應是什麼？
- *
- * 結局 outcome tags：
- *   prescient   — 早期識別系統風險
- *   reactive    — 跟隨共識，危機後才調整
+ * dashboard 物件隨場景更新三個即時指標，讓玩家感受數字的「緩慢位移」
+ *   hpi    — 房價指數（2000=100）
+ *   default — 次貸違約率（%）
+ *   vix    — 恐慌指數
  */
 
 export const ECONOMIST_SCENE_START = 'onboard';
@@ -23,6 +16,7 @@ export const ECONOMIST_SCENES = {
     id: 'onboard',
     title: '第一場 · 凱信研究部 · 2006 秋',
     sceneKey: 'office',
+    dashboard: { hpi: 124.3, default: 1.2, vix: 11.2 },
     beats: [
       { type: 'narrate',  text: '2006年秋天，你加入凱信金融研究部門，報到第一天。',                                                    ms: 2200 },
       { type: 'narrate',  text: '首席經濟學家王博士遞給你一疊報告，順口說了一句：',                                                    ms: 1800 },
@@ -44,6 +38,7 @@ export const ECONOMIST_SCENES = {
     id: 'subprime_data',
     title: '第二場 · 數據室 · 2007 Q1',
     sceneKey: 'data',
+    dashboard: { hpi: 125.1, default: 3.8, vix: 13.4 },
     beats: [
       { type: 'narrate',    text: '數字不太對勁。',                                                                                   ms: 1400 },
       { type: 'narrate',    text: '次貸違約率連續三個月上升，幅度超出模型預期。加州、佛州最明顯。',                                     ms: 2800 },
@@ -64,6 +59,7 @@ export const ECONOMIST_SCENES = {
     id: 'flagged',
     title: '第二場 · 數據室（續）',
     sceneKey: 'data',
+    dashboard: { hpi: 125.1, default: 4.2, vix: 14.1 },
     beats: [
       { type: 'narrate',  text: '你把數據壓在附錄第 14 頁，字級縮小，標注「僅供參考」。',                                             ms: 2400 },
       { type: 'narrate',  text: '沒有人會主動翻到這裡。但記錄在那裡。',                                                               ms: 2000 },
@@ -76,6 +72,7 @@ export const ECONOMIST_SCENES = {
     id: 'buried',
     title: '第二場 · 數據室（續）',
     sceneKey: 'data',
+    dashboard: { hpi: 125.1, default: 4.2, vix: 14.1 },
     beats: [
       { type: 'narrate',  text: '報告交出去了。乾淨、漂亮、令人安心。',                                                               ms: 1800 },
       { type: 'narrate',  text: '但你心裡有一根刺沒有拔掉。',                                                                         ms: 1600 },
@@ -89,6 +86,7 @@ export const ECONOMIST_SCENES = {
     id: 'quarterly_report',
     title: '第二場 · 會議室 · 2006 Q4',
     sceneKey: 'meeting',
+    dashboard: { hpi: 124.3, default: 1.8, vix: 11.8 },
     beats: [
       { type: 'narrate',  text: '展望報告：12 頁圖表，全是向右上方的箭頭。',                                                          ms: 1800 },
       { type: 'narrate',  text: '你幫忙整理完，送給王博士簽核。',                                                                     ms: 1600 },
@@ -109,6 +107,7 @@ export const ECONOMIST_SCENES = {
     id: 'bear_stearns',
     title: '第三場 · 新聞牆 · 2007 年 8 月',
     sceneKey: 'newsroom',
+    dashboard: { hpi: 118.4, default: 6.1, vix: 27.8 },
     beats: [
       { type: 'narrate',  text: '2007年8月1日。',                                                                                     ms: 1200 },
       { type: 'narrate',  text: 'Bloomberg 跑出一行字：Bear Stearns 旗下兩支次貸對沖基金宣告崩潰，損失超過 16 億美元。',              ms: 3200 },
@@ -128,6 +127,7 @@ export const ECONOMIST_SCENES = {
     id: 'systemic_check',
     title: '第三場 · 數據室（緊急）',
     sceneKey: 'data',
+    dashboard: { hpi: 116.2, default: 7.3, vix: 31.2 },
     clueUnlock: {
       label: '訊號解鎖：系統性擴散指標',
       icon: '📉',
@@ -146,6 +146,7 @@ export const ECONOMIST_SCENES = {
     id: 'client_meeting',
     title: '第四場 · 客戶會議 · 2007 Q3',
     sceneKey: 'meeting',
+    dashboard: { hpi: 114.8, default: 7.8, vix: 33.1 },
     beats: [
       { type: 'narrate',  text: '大客戶——一家退休基金的 CIO——直視著你們。',                                                          ms: 2200 },
       { type: 'dialogue', speaker: 'CIO', text: '「Bear Stearns 是個案，還是系統性問題？我需要一個直接的答案。」',                     ms: 3200 },
@@ -164,6 +165,7 @@ export const ECONOMIST_SCENES = {
     id: 'warning_given',
     title: '第四場 · 客戶會議（續）',
     sceneKey: 'meeting',
+    dashboard: { hpi: 114.8, default: 7.8, vix: 33.1 },
     beats: [
       { type: 'narrate',  text: '沉默持續了大概三秒。',                                                                               ms: 1600 },
       { type: 'dialogue', speaker: '王博士', text: '「我的助理比較謹慎。我們建議減少次貸相關曝險，持續追蹤。」',                       ms: 3000 },
@@ -176,6 +178,7 @@ export const ECONOMIST_SCENES = {
     id: 'reassurance',
     title: '第四場 · 客戶會議（續）',
     sceneKey: 'meeting',
+    dashboard: { hpi: 114.8, default: 7.8, vix: 33.1 },
     beats: [
       { type: 'narrate',  text: '客戶點點頭，緊張稍微鬆了。',                                                                         ms: 1600 },
       { type: 'narrate',  text: '你說的跟王博士一致。會議順利結束。',                                                                 ms: 1800 },
@@ -190,6 +193,7 @@ export const ECONOMIST_SCENES = {
     id: 'lehman',
     title: '第五場 · 交易室 · 2008 年 9 月 15 日',
     sceneKey: 'crisis',
+    dashboard: { hpi: 89.2, default: 12.4, vix: 42.2 },
     beats: [
       { type: 'narrate',  text: '2008 年 9 月 15 日，星期一，早上 8:47。',                                                           ms: 2000 },
       { type: 'narrate',  text: '你打開 Bloomberg。螢幕是紅的。',                                                                     ms: 1800 },
@@ -212,6 +216,7 @@ export const ECONOMIST_SCENES = {
     id: 'ending_prescient',
     title: '結局 · 危機備忘錄',
     sceneKey: 'aftermath',
+    dashboard: { hpi: 85.1, default: 14.1, vix: 38.4 },
     beats: [
       { type: 'narrate',  text: '你的建議被採納了。接下來 72 小時，整個團隊徹夜工作。',                                               ms: 2800 },
       { type: 'narrate',  text: '不是每個損失都能避開。但你比多數人早準備了。',                                                       ms: 2400 },
@@ -226,6 +231,7 @@ export const ECONOMIST_SCENES = {
     id: 'ending_reactive',
     title: '結局 · 遲來的調整',
     sceneKey: 'aftermath',
+    dashboard: { hpi: 85.1, default: 14.1, vix: 38.4 },
     beats: [
       { type: 'narrate',  text: 'Fed 聲明在下午 3 點發出。但市場已經在自由落體。',                                                    ms: 2800 },
       { type: 'narrate',  text: '你的團隊反應不算太慢。但很多視窗已經關閉了。',                                                       ms: 2400 },

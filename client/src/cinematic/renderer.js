@@ -316,6 +316,36 @@ const CSS = `
 .scene-in { animation: sceneIn 1.3s ease forwards; }
 .sunrise  { animation: sunrise 2s  ease forwards; }
 .embrace  { animation: embrace 1.5s ease forwards 0.5s; opacity: 0; }
+
+/* ── Dashboard HUD ─── */
+#cin-dashboard {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 0.55rem 0.8rem;
+  background: linear-gradient(to top, rgba(4,8,14,0.88) 0%, rgba(4,8,14,0) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  z-index: 10;
+}
+#cin-dashboard.visible { opacity: 1; }
+.dash-item {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  min-width: 4.5rem;
+}
+.dash-label {
+  font-size: 0.62rem; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(160,180,200,0.45); font-family: 'JetBrains Mono', monospace;
+}
+.dash-value {
+  font-size: 0.92rem; font-weight: 700; font-family: 'JetBrains Mono', 'Courier New', monospace;
+  transition: color 0.8s ease;
+  letter-spacing: .02em;
+}
+.dash-value.up   { color: #e74c3c; }
+.dash-value.down { color: #2ecc71; }
+.dash-value.neutral { color: rgba(200,180,140,0.75); }
+.dash-arrow { font-size: 0.7rem; opacity: 0.7; }
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1330,6 +1360,7 @@ export class CinematicPlayer {
     this._timer   = null;
     this._sceneNum = 0;        // 累計場景數（用於標題）
     this._choicesMade = [];    // 記錄用戶選擇（供結局面板顯示）
+    this._lastDash    = null;  // dashboard 前一個數值（用於動畫 diff）
   }
 
   // ── 初始化 ──────────────────────────────────────────────
@@ -1353,6 +1384,20 @@ export class CinematicPlayer {
         <div id="cin-scene-panel">
           <div id="cin-scene-art"></div>
           <div class="scene-label-overlay" id="cin-scene-label"></div>
+          <div id="cin-dashboard">
+            <div class="dash-item">
+              <span class="dash-label">房價指數</span>
+              <span class="dash-value neutral" id="dash-hpi">—</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">次貸違約率</span>
+              <span class="dash-value neutral" id="dash-default">—</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">VIX 恐慌指數</span>
+              <span class="dash-value neutral" id="dash-vix">—</span>
+            </div>
+          </div>
         </div>
         <div id="cin-narration">
           <div id="cin-header">
@@ -1396,6 +1441,9 @@ export class CinematicPlayer {
 
     // 重設進度條（顯示本場進度）
     this._updateProgress(0, scene.beats.length);
+
+    // Dashboard HUD（有 dashboard 資料才顯示）
+    this._updateDashboard(scene.dashboard || null);
 
     // 場景開始時若有線索，先顯示
     if (scene.clueUnlock) {
@@ -1541,6 +1589,44 @@ export class CinematicPlayer {
       el.textContent = text.slice(0, ++i);
       if (i >= text.length) clearInterval(tick);
     }, perChar);
+  }
+
+  // ── Dashboard HUD（經濟學家模組專用）────────────────────
+  _updateDashboard(dash) {
+    const hud = document.getElementById('cin-dashboard');
+    if (!hud) return;
+
+    if (!dash) { hud.classList.remove('visible'); return; }
+    hud.classList.add('visible');
+
+    const prev = this._lastDash || {};
+    this._lastDash = dash;
+
+    const animate = (elId, newVal, oldVal, fmt, higherIsBad) => {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      const start = oldVal ?? newVal;
+      const duration = 900;
+      const startTime = performance.now();
+      const tick = (now) => {
+        const t = Math.min((now - startTime) / duration, 1);
+        const eased = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+        const cur = start + (newVal - start) * eased;
+        el.textContent = fmt(cur);
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = fmt(newVal);
+      };
+      requestAnimationFrame(tick);
+      // 顏色方向
+      if (oldVal !== undefined && Math.abs(newVal - oldVal) > 0.05) {
+        const wentUp = newVal > oldVal;
+        el.className = `dash-value ${(wentUp === higherIsBad) ? 'up' : 'down'}`;
+      }
+    };
+
+    animate('dash-hpi',     dash.hpi,     prev.hpi,     v => v.toFixed(1),        false);
+    animate('dash-default', dash.default, prev.default, v => v.toFixed(1) + '%',   true);
+    animate('dash-vix',     dash.vix,     prev.vix,     v => v.toFixed(1),         true);
   }
 
   // ── 進度條（本場 beats 進度） ────────────────────────────
