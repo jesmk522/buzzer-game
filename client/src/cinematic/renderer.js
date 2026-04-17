@@ -1,0 +1,947 @@
+/**
+ * CinematicPlayer — 動畫版播放器
+ *
+ * 版面：左側 62% 場景動畫（CSS + SVG）／右側 38% 旁白走字
+ * 自動按 beat.ms 推進，typewriter 速度動態計算。
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS（注入一次）
+// ─────────────────────────────────────────────────────────────────────────────
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&display=swap');
+
+#cin-stage {
+  position: fixed; inset: 0;
+  display: flex;
+  background: #050d15;
+  overflow: hidden;
+  z-index: 9999;
+  font-family: 'Noto Serif TC', 'Noto Serif', 'PingFang TC', 'Heiti TC', serif;
+}
+
+/* ── 場景面板 ─── */
+#cin-scene-panel {
+  flex: 0 0 62%;
+  position: relative;
+  overflow: hidden;
+}
+#cin-scene-panel svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+.scene-label-overlay {
+  position: absolute;
+  bottom: 1.4rem; left: 1.8rem;
+  color: rgba(255,255,255,0.28);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  pointer-events: none;
+}
+
+/* ── 旁白面板 ─── */
+#cin-narration {
+  flex: 0 0 38%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(3,10,18,0.88);
+  border-left: 1px solid rgba(255,255,255,0.07);
+  overflow: hidden;
+}
+#cin-header {
+  padding: 1.7rem 1.5rem 1.2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+#cin-scene-num {
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  color: rgba(200,152,58,0.72);
+  text-transform: uppercase;
+  margin-bottom: 0.28rem;
+}
+#cin-scene-title {
+  font-size: 0.95rem;
+  color: rgba(245,238,222,0.88);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+#cin-beats {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  scroll-behavior: smooth;
+}
+#cin-beats::-webkit-scrollbar { width: 2px; }
+#cin-beats::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+#cin-progress { height: 2px; background: rgba(255,255,255,0.05); flex-shrink: 0; }
+#cin-progress-fill { height: 100%; background: rgba(200,152,58,0.55); transition: width 0.6s linear; width: 0%; }
+
+/* ── Beat 樣式 ─── */
+.cin-beat { animation: beatIn 0.4s ease forwards; opacity: 0; }
+@keyframes beatIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.b-narrate .cin-text {
+  color: rgba(195,205,216,0.87);
+  font-size: 0.87rem;
+  line-height: 1.95;
+  font-style: italic;
+}
+.b-dialogue .cin-speaker {
+  display: block;
+  font-size: 0.6rem;
+  color: rgba(200,152,58,0.82);
+  letter-spacing: 0.18em;
+  margin-bottom: 0.3rem;
+}
+.b-dialogue .cin-text {
+  color: rgba(242,236,222,0.93);
+  font-size: 0.9rem;
+  line-height: 1.82;
+}
+.b-annotation {
+  padding: 0.65rem 1rem 0.65rem 0.9rem;
+  border-left: 2.5px solid rgba(200,58,48,0.65);
+  background: rgba(200,58,48,0.06);
+  border-radius: 0 5px 5px 0;
+}
+.b-annotation .cin-text {
+  color: rgba(255,172,158,0.9);
+  font-size: 0.84rem;
+  line-height: 1.85;
+  font-style: italic;
+}
+.b-deduction {
+  padding: 0.9rem 1.1rem;
+  background: rgba(28,62,108,0.35);
+  border: 1px solid rgba(75,138,210,0.22);
+  border-radius: 7px;
+  animation: deductionIn 0.8s ease forwards;
+  opacity: 0;
+}
+@keyframes deductionIn {
+  from { opacity: 0; box-shadow: 0 0 0 rgba(75,138,210,0); }
+  to   { opacity: 1; box-shadow: 0 0 20px rgba(75,138,210,0.12); }
+}
+.b-deduction .cin-text {
+  color: rgba(172,215,255,0.93);
+  font-size: 0.87rem;
+  line-height: 1.85;
+}
+.b-epilogue {
+  padding: 0.8rem 1rem;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px;
+}
+.b-epilogue .cin-text {
+  color: rgba(155,155,158,0.8);
+  font-size: 0.74rem;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+}
+
+/* ── 線索卡 ─── */
+.cin-clue {
+  display: flex; align-items: flex-start; gap: 0.7rem;
+  padding: 0.7rem 1rem;
+  background: rgba(195,148,38,0.09);
+  border: 1px solid rgba(195,148,38,0.28);
+  border-radius: 7px;
+  animation: clueIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  opacity: 0;
+}
+@keyframes clueIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.cin-clue-icon { font-size: 1.2rem; margin-top: 0.05rem; }
+.cin-clue-label { display: block; font-size: 0.68rem; color: rgba(200,152,58,0.88); font-weight: 500; letter-spacing: 0.07em; margin-bottom: 0.18rem; }
+.cin-clue-detail { font-size: 0.62rem; color: rgba(170,170,170,0.65); }
+
+/* ── 結局蓋板 ─── */
+#cin-ending-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(3,10,18,0.95);
+  backdrop-filter: blur(20px);
+  animation: fadeIn 1.8s ease forwards;
+  z-index: 200;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.cin-ending-card {
+  text-align: center;
+  padding: 2.5rem 3rem;
+  border: 1px solid rgba(200,152,58,0.18);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.018);
+  max-width: 380px;
+}
+.cin-ending-card h2 { font-size: 1.25rem; color: rgba(200,152,58,0.9); margin-bottom: 1.5rem; letter-spacing: 0.1em; }
+.cin-ep-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.78rem; }
+.cin-ep-row:last-of-type { border-bottom: none; }
+.cin-ep-key { color: rgba(155,155,158,0.7); }
+.cin-ep-val { color: rgba(230,224,208,0.9); text-align: right; }
+.cin-ep-tag { display: inline-block; margin: 0.25rem 0.15rem 0; padding: 0.18rem 0.5rem; background: rgba(75,138,210,0.12); border: 1px solid rgba(75,138,210,0.25); border-radius: 100px; color: rgba(150,195,255,0.85); font-size: 0.62rem; letter-spacing: 0.04em; }
+.cin-ep-badge { display: inline-block; margin-top: 1.2rem; padding: 0.35rem 1rem; background: rgba(60,150,80,0.14); border: 1px solid rgba(80,180,100,0.28); border-radius: 100px; color: rgba(120,200,130,0.9); font-size: 0.72rem; letter-spacing: 0.08em; }
+#cin-replay-btn { margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: transparent; border: 1px solid rgba(200,152,58,0.35); border-radius: 6px; color: rgba(200,152,58,0.8); font-size: 0.78rem; font-family: inherit; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
+#cin-replay-btn:hover { background: rgba(200,152,58,0.1); border-color: rgba(200,152,58,0.6); color: rgba(200,152,58,1); }
+
+/* ── SVG 動畫 ─── */
+@keyframes fogDrift  { 0%,100%{transform:translateX(0);opacity:.045} 50%{transform:translateX(28px);opacity:.08} }
+@keyframes fogDrift2 { 0%,100%{transform:translateX(0);opacity:.055} 50%{transform:translateX(-22px);opacity:.09} }
+@keyframes fogDrift3 { 0%,100%{transform:translateX(0);opacity:.03}  50%{transform:translateX(18px);opacity:.06} }
+@keyframes glowPulse { 0%,100%{opacity:.45} 50%{opacity:.82} }
+@keyframes flicker   { 0%,90%,100%{opacity:1} 92%{opacity:.28} 94%{opacity:.9} 96%{opacity:.35} }
+@keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes sceneIn   { from{opacity:0} to{opacity:1} }
+@keyframes sunrise   { from{opacity:0;transform:scaleY(0.8)} to{opacity:1;transform:scaleY(1)} }
+@keyframes embrace   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.fog-a  { animation: fogDrift  9s  ease-in-out infinite; }
+.fog-b  { animation: fogDrift2 13s ease-in-out infinite 2s; }
+.fog-c  { animation: fogDrift3 17s ease-in-out infinite 5s; }
+.glow   { animation: glowPulse 4s  ease-in-out infinite; }
+.lamp   { animation: flicker   11s ease-in-out infinite; }
+.float  { animation: float     5s  ease-in-out infinite; }
+.scene-in { animation: sceneIn 1.3s ease forwards; }
+.sunrise  { animation: sunrise 2s  ease forwards; }
+.embrace  { animation: embrace 1.5s ease forwards 0.5s; opacity: 0; }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SVG 場景藝術
+// ─────────────────────────────────────────────────────────────────────────────
+const SCENE_ART = {
+
+  // 老街清晨
+  dawn: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#070e1a"/>
+      <stop offset="65%"  stop-color="#0d1f35"/>
+      <stop offset="100%" stop-color="#0a1525"/>
+    </linearGradient>
+    <radialGradient id="d-lamp" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#f5c842" stop-opacity=".38"/>
+      <stop offset="100%" stop-color="#f5c842" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="d-win" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#2a5a8a" stop-opacity=".7"/>
+      <stop offset="100%" stop-color="#1a3a6a" stop-opacity=".3"/>
+    </radialGradient>
+    <filter id="f-blur"><feGaussianBlur stdDeviation="22"/></filter>
+    <filter id="f-soft"><feGaussianBlur stdDeviation="5"/></filter>
+  </defs>
+
+  <!-- 天空 -->
+  <rect width="800" height="520" fill="url(#d-sky)"/>
+
+  <!-- 星 -->
+  <circle cx="100" cy="45"  r="1.2" fill="white" opacity=".55"/>
+  <circle cx="190" cy="28"  r="1.5" fill="white" opacity=".45"/>
+  <circle cx="310" cy="60"  r="1"   fill="white" opacity=".65"/>
+  <circle cx="460" cy="35"  r="1.3" fill="white" opacity=".5"/>
+  <circle cx="580" cy="52"  r="1"   fill="white" opacity=".6"/>
+  <circle cx="680" cy="22"  r="1.5" fill="white" opacity=".42"/>
+  <circle cx="740" cy="68"  r="1"   fill="white" opacity=".55"/>
+
+  <!-- 霧 -->
+  <ellipse class="fog-a" cx="180" cy="400" rx="240" ry="90"  fill="white" filter="url(#f-blur)"/>
+  <ellipse class="fog-b" cx="520" cy="370" rx="300" ry="100" fill="white" filter="url(#f-blur)"/>
+  <ellipse class="fog-c" cx="360" cy="440" rx="350" ry="80"  fill="white" filter="url(#f-blur)"/>
+
+  <!-- 左棟建築 -->
+  <rect x="0"   y="80"  width="200" height="440" fill="#070e18"/>
+  <rect x="0"   y="80"  width="200" height="18"  fill="#0a1620"/>
+  <!-- 左窗 -->
+  <rect x="18"  y="105" width="26" height="32" fill="url(#d-win)" rx="2"/>
+  <rect x="58"  y="105" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".6"/>
+  <rect x="98"  y="105" width="26" height="32" fill="#0c1e32" rx="2" opacity=".5"/>
+  <rect x="138" y="105" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".75"/>
+  <rect x="18"  y="155" width="26" height="32" fill="#0c1e32" rx="2" opacity=".4"/>
+  <rect x="58"  y="155" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".85"/>
+  <rect x="98"  y="155" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".5"/>
+  <rect x="138" y="155" width="26" height="32" fill="#0c1e32" rx="2" opacity=".55"/>
+  <rect x="18"  y="205" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".45"/>
+  <rect x="98"  y="205" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".65"/>
+
+  <!-- 中間矮房 -->
+  <rect x="190" y="240" width="130" height="280" fill="#090e18"/>
+  <rect x="195" y="245" width="42"  height="50"  fill="url(#d-win)" rx="2" opacity=".55"/>
+  <rect x="250" y="245" width="42"  height="50"  fill="#0c1e32" rx="2" opacity=".4"/>
+
+  <!-- 右棟建築 -->
+  <rect x="580" y="55" width="220" height="465" fill="#060c16"/>
+  <rect x="580" y="55" width="220" height="16"  fill="#09131f"/>
+  <!-- 右窗 -->
+  <rect x="596" y="80"  width="26" height="32" fill="url(#d-win)" rx="2" opacity=".65"/>
+  <rect x="638" y="80"  width="26" height="32" fill="url(#d-win)" rx="2" opacity=".85"/>
+  <rect x="680" y="80"  width="26" height="32" fill="#0c1e32" rx="2" opacity=".55"/>
+  <rect x="722" y="80"  width="26" height="32" fill="url(#d-win)" rx="2" opacity=".5"/>
+  <rect x="596" y="130" width="26" height="32" fill="#0c1e32" rx="2" opacity=".35"/>
+  <rect x="638" y="130" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".7"/>
+  <rect x="722" y="130" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".55"/>
+  <rect x="596" y="180" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".6"/>
+  <rect x="680" y="180" width="26" height="32" fill="url(#d-win)" rx="2" opacity=".4"/>
+
+  <!-- 地面 -->
+  <rect x="0" y="435" width="800" height="85" fill="#060c16"/>
+  <line x1="0" y1="435" x2="800" y2="435" stroke="#0e2040" stroke-width="1.5"/>
+  <!-- 地面反光 -->
+  <rect x="0" y="435" width="800" height="18" fill="#091525" opacity=".5"/>
+
+  <!-- 路燈 -->
+  <line x1="338" y1="100" x2="338" y2="435" stroke="#253545" stroke-width="6"/>
+  <line x1="312" y1="100" x2="364" y2="100" stroke="#253545" stroke-width="5"/>
+  <circle class="lamp" cx="312" cy="98" r="7" fill="#f5c842" opacity=".95"/>
+  <!-- 燈暈 -->
+  <ellipse class="glow" cx="315" cy="102" rx="95" ry="70" fill="url(#d-lamp)" filter="url(#f-soft)"/>
+  <!-- 光錐（地面） -->
+  <polygon points="285,115 200,435 420,435" fill="#f5c842" opacity=".018"/>
+
+  <!-- 人物：陳秀蘭（左，矮，拉袖子） -->
+  <g transform="translate(430,305)">
+    <ellipse cx="0" cy="-17" rx="13" ry="16" fill="#040a12"/>
+    <path d="M -6,-32 Q 0,-44 6,-32" fill="#040a12"/>
+    <rect x="-12" y="-2" width="24" height="52" fill="#040a12" rx="5"/>
+    <rect x="-10" y="48" width="9"  height="34" fill="#040a12" rx="3"/>
+    <rect x="1"   y="48" width="9"  height="34" fill="#040a12" rx="3"/>
+    <!-- 伸手拉袖 -->
+    <path d="M 12,8 Q 28,2 42,10" stroke="#040a12" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M -12,8 Q -20,22 -18,38" stroke="#040a12" stroke-width="7" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- 人物：偵探（右，稍高，偵探帽） -->
+  <g transform="translate(500,285)">
+    <ellipse cx="0" cy="-22" rx="14" ry="18" fill="#040a12"/>
+    <!-- 帽子 -->
+    <rect x="-18" y="-42" width="36" height="8" fill="#040a12" rx="2"/>
+    <rect x="-12" y="-58" width="24" height="20" fill="#040a12" rx="4"/>
+    <!-- 大衣 -->
+    <rect x="-15" y="-4" width="30" height="58" fill="#040a12" rx="5"/>
+    <rect x="-10" y="52" width="10" height="38" fill="#040a12" rx="3"/>
+    <rect x="2"   y="52" width="10" height="38" fill="#040a12" rx="3"/>
+    <!-- 手（接收冊子的姿勢） -->
+    <path d="M -15,10 Q -32,18 -42,14" stroke="#040a12" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M 15,10 Q 22,25 20,38" stroke="#040a12" stroke-width="7" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>`,
+
+  // 阿公日記
+  diary: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="p-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1a1008"/>
+      <stop offset="100%" stop-color="#2a1c0e"/>
+    </linearGradient>
+    <linearGradient id="p-paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#f5ead8"/>
+      <stop offset="100%" stop-color="#e8d8bc"/>
+    </linearGradient>
+    <radialGradient id="p-light" cx="50%" cy="30%" r="70%">
+      <stop offset="0%"   stop-color="#f0c060" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#f0c060" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="p-shadow"><feDropShadow dx="4" dy="8" stdDeviation="12" flood-opacity=".5"/></filter>
+  </defs>
+
+  <rect width="800" height="520" fill="url(#p-bg)"/>
+  <!-- 環境光 -->
+  <ellipse cx="400" cy="160" rx="360" ry="220" fill="url(#p-light)"/>
+
+  <!-- 書本（打開狀態） -->
+  <!-- 左頁 -->
+  <rect x="100" y="80" width="270" height="360" fill="#e4d4b4" rx="3" filter="url(#p-shadow)"/>
+  <!-- 左頁行線 -->
+  <line x1="120" y1="120" x2="352" y2="120" stroke="#c8b898" stroke-width="1" opacity=".6"/>
+  <line x1="120" y1="148" x2="352" y2="148" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <line x1="120" y1="176" x2="352" y2="176" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <line x1="120" y1="204" x2="352" y2="204" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <line x1="120" y1="232" x2="352" y2="232" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <!-- 左頁文字 -->
+  <rect x="128" y="113" width="110" height="5" fill="#8a7a62" rx="2" opacity=".5"/>
+  <rect x="128" y="141" width="145" height="5" fill="#8a7a62" rx="2" opacity=".45"/>
+  <rect x="128" y="169" width="128" height="5" fill="#8a7a62" rx="2" opacity=".5"/>
+  <rect x="128" y="197" width="160" height="5" fill="#8a7a62" rx="2" opacity=".42"/>
+  <rect x="128" y="225" width="98"  height="5" fill="#8a7a62" rx="2" opacity=".48"/>
+
+  <!-- 右頁 -->
+  <rect x="430" y="80" width="270" height="360" fill="url(#p-paper)" rx="3" filter="url(#p-shadow)"/>
+  <!-- 右頁行線 -->
+  <line x1="450" y1="120" x2="682" y2="120" stroke="#c8b898" stroke-width="1" opacity=".6"/>
+  <line x1="450" y1="148" x2="682" y2="148" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <line x1="450" y1="176" x2="682" y2="176" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <line x1="450" y1="204" x2="682" y2="204" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+  <line x1="450" y1="232" x2="682" y2="232" stroke="#c8b898" stroke-width="1" opacity=".5"/>
+
+  <!-- 當鋪收據（貼在右頁中下方） -->
+  <rect x="460" y="250" width="230" height="140" fill="#f8f0dc" rx="4" filter="url(#p-shadow)" opacity=".95"/>
+  <rect x="460" y="250" width="230" height="22"  fill="#d4a82a" rx="4" opacity=".7"/>
+  <text x="575" y="266" text-anchor="middle" fill="#4a3000" font-size="11" font-family="serif" letter-spacing="2">永 樂 當 鋪</text>
+  <!-- 收據內容 -->
+  <rect x="475" y="283" width="80"  height="5" fill="#6a5a42" rx="2" opacity=".6"/>
+  <rect x="580" y="283" width="95"  height="5" fill="#6a5a42" rx="2" opacity=".6"/>
+  <rect x="475" y="300" width="60"  height="5" fill="#6a5a42" rx="2" opacity=".5"/>
+  <rect x="475" y="317" width="110" height="5" fill="#6a5a42" rx="2" opacity=".55"/>
+  <!-- 金額 -->
+  <text x="578" y="358" text-anchor="middle" fill="#8a2000" font-size="16" font-family="serif" font-weight="bold">NT$ 80,000</text>
+  <rect x="530" y="365" width="95" height="1.5" fill="#8a2000" opacity=".5"/>
+
+  <!-- 紅筆批注 -->
+  <text x="470" y="415" fill="#c02820" font-size="10" font-family="serif" opacity=".9" font-style="italic">要把錢給小寶—</text>
+  <!-- 紅色箭頭 -->
+  <path d="M 460,395 Q 455,400 462,408" stroke="#c02820" stroke-width="2" fill="none" opacity=".75"/>
+
+  <!-- 書脊（中線） -->
+  <rect x="393" y="80" width="34" height="360" fill="#c8a868" opacity=".35"/>
+  <line x1="410" y1="80" x2="410" y2="440" stroke="#b89848" stroke-width="2" opacity=".4"/>
+</svg>`,
+
+  // 永樂當鋪
+  pawn: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pw-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1a0e04"/>
+      <stop offset="55%"  stop-color="#2a1a08"/>
+      <stop offset="100%" stop-color="#180c04"/>
+    </linearGradient>
+    <radialGradient id="pw-lamp" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#e8a020" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#e8a020" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pw-watch" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#f5d060" stop-opacity=".95"/>
+      <stop offset="60%"  stop-color="#c8a020" stop-opacity=".6"/>
+      <stop offset="100%" stop-color="#c8a020" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="pw-glow"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="pw-soft"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+
+  <rect width="800" height="520" fill="url(#pw-bg)"/>
+
+  <!-- 天花板 -->
+  <rect x="0" y="0" width="800" height="55" fill="#100805"/>
+
+  <!-- 吊燈 -->
+  <line x1="400" y1="0"  x2="400" y2="55" stroke="#3a2818" stroke-width="3"/>
+  <ellipse cx="400" cy="62" rx="30" ry="14" fill="#c88818"/>
+  <ellipse class="glow" cx="400" cy="62" rx="120" ry="90" fill="url(#pw-lamp)" filter="url(#pw-soft)"/>
+
+  <!-- 展示架（背景） -->
+  <rect x="0" y="55" width="800" height="280" fill="#1c1008"/>
+  <!-- 展示格架 -->
+  <line x1="0"   y1="130" x2="800" y2="130" stroke="#3a2010" stroke-width="2"/>
+  <line x1="0"   y1="200" x2="800" y2="200" stroke="#3a2010" stroke-width="2"/>
+  <line x1="0"   y1="270" x2="800" y2="270" stroke="#3a2010" stroke-width="2"/>
+  <line x1="120" y1="55"  x2="120" y2="335" stroke="#3a2010" stroke-width="1.5"/>
+  <line x1="240" y1="55"  x2="240" y2="335" stroke="#3a2010" stroke-width="1.5"/>
+  <line x1="360" y1="55"  x2="360" y2="335" stroke="#3a2010" stroke-width="1.5"/>
+  <line x1="480" y1="55"  x2="480" y2="335" stroke="#3a2010" stroke-width="1.5"/>
+  <line x1="600" y1="55"  x2="600" y2="335" stroke="#3a2010" stroke-width="1.5"/>
+  <line x1="720" y1="55"  x2="720" y2="335" stroke="#3a2010" stroke-width="1.5"/>
+
+  <!-- 展示物品（當品） -->
+  <!-- 金錶（主焦點，稍大，發光） -->
+  <circle class="float" cx="300" cy="170" r="28" fill="none" stroke="#c8a020" stroke-width="5"/>
+  <circle class="float" cx="300" cy="170" r="22" fill="#e8c840" opacity=".8"/>
+  <circle cx="300" cy="170" r="32" fill="url(#pw-watch)" filter="url(#pw-glow)" opacity=".9"/>
+  <!-- 手錶帶 -->
+  <rect x="290" y="140" width="20" height="12" fill="#8a6020" rx="2"/>
+  <rect x="290" y="196" width="20" height="12" fill="#8a6020" rx="2"/>
+  <!-- 錶面指針 -->
+  <line x1="300" y1="170" x2="300" y2="157" stroke="#1a0e04" stroke-width="2"/>
+  <line x1="300" y1="170" x2="310" y2="175" stroke="#1a0e04" stroke-width="1.5"/>
+
+  <!-- 其他當品（背景） -->
+  <rect x="80"  y="90"  width="35" height="28" fill="#3a2828" rx="3" opacity=".6"/>
+  <rect x="145" y="85"  width="28" height="35" fill="#382028" rx="3" opacity=".5"/>
+  <circle cx="510" cy="100" r="18" fill="none" stroke="#5a4820" stroke-width="3" opacity=".5"/>
+  <rect x="640"  y="88"  width="40" height="30" fill="#283040" rx="3" opacity=".55"/>
+  <rect x="700"  y="82"  width="28" height="42" fill="#2a1818" rx="2" opacity=".45"/>
+
+  <!-- 當鋪櫃台 -->
+  <rect x="0"   y="335" width="800" height="30" fill="#2a1808"/>
+  <rect x="0"   y="340" width="800" height="180" fill="#1c1008"/>
+  <!-- 玻璃（反光） -->
+  <rect x="0" y="335" width="800" height="12" fill="#e8c860" opacity=".06"/>
+
+  <!-- 帳本 -->
+  <rect x="310" y="348" width="180" height="120" fill="#1a1208" rx="3"/>
+  <rect x="310" y="348" width="180" height="20"  fill="#3a2808" rx="3"/>
+  <!-- 帳本行 -->
+  <line x1="325" y1="382" x2="475" y2="382" stroke="#3a2808" stroke-width="1.5"/>
+  <line x1="325" y1="400" x2="475" y2="400" stroke="#3a2808" stroke-width="1.5"/>
+  <line x1="325" y1="418" x2="475" y2="418" stroke="#3a2808" stroke-width="1.5"/>
+  <line x1="325" y1="436" x2="475" y2="436" stroke="#3a2808" stroke-width="1.5"/>
+
+  <!-- 人物：王老闆（後方，矮胖） -->
+  <g transform="translate(540,320)">
+    <ellipse cx="0" cy="-20" rx="18" ry="18" fill="#0e0804"/>
+    <rect x="-22" y="-4" width="44" height="55" fill="#0e0804" rx="5"/>
+    <path d="M -22,5 Q -38,18 -36,38" stroke="#0e0804" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M  22,5 Q  38,18  36,38" stroke="#0e0804" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <rect x="-16" y="49" width="13" height="25" fill="#0e0804" rx="3"/>
+    <rect x="3"   y="49" width="13" height="25" fill="#0e0804" rx="3"/>
+  </g>
+
+  <!-- 人物：阿公（前方，對著老闆） -->
+  <g transform="translate(250,320)">
+    <ellipse cx="0" cy="-18" rx="14" ry="17" fill="#080604"/>
+    <rect x="-13" y="-2" width="26" height="50" fill="#080604" rx="4"/>
+    <path d="M -13,6 Q -28,22 -26,40" stroke="#080604" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M  13,6 Q  28,22  26,40" stroke="#080604" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <rect x="-11" y="46" width="9"  height="28" fill="#080604" rx="3"/>
+    <rect x="2"   y="46" width="9"  height="28" fill="#080604" rx="3"/>
+  </g>
+
+  <!-- 招牌 -->
+  <rect x="280" y="58" width="240" height="40" fill="#2a1808" rx="4"/>
+  <text x="400" y="84" text-anchor="middle" fill="#e8a020" font-size="16" font-family="serif" letter-spacing="4" opacity=".85">永 樂 當 鋪</text>
+</svg>`,
+
+  // 土地銀行
+  bank: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bk-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#0e1520"/>
+      <stop offset="100%" stop-color="#0a1018"/>
+    </linearGradient>
+    <linearGradient id="bk-screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1a4060"/>
+      <stop offset="100%" stop-color="#0e2840"/>
+    </linearGradient>
+    <radialGradient id="bk-light" cx="50%" cy="0%" r="80%">
+      <stop offset="0%"   stop-color="#c8d8e8" stop-opacity=".12"/>
+      <stop offset="100%" stop-color="#c8d8e8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="bk-glow"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+
+  <rect width="800" height="520" fill="url(#bk-bg)"/>
+  <!-- 頂燈 -->
+  <rect x="80"  y="0" width="180" height="8" fill="#c8d8e8" opacity=".18"/>
+  <rect x="320" y="0" width="160" height="8" fill="#c8d8e8" opacity=".18"/>
+  <rect x="540" y="0" width="180" height="8" fill="#c8d8e8" opacity=".18"/>
+  <!-- 環境冷光 -->
+  <rect width="800" height="520" fill="url(#bk-light)"/>
+
+  <!-- 背景牆 -->
+  <rect x="0" y="30" width="800" height="280" fill="#0c1318"/>
+  <!-- 牆面裝飾線 -->
+  <line x1="0" y1="180" x2="800" y2="180" stroke="#182030" stroke-width="1.5"/>
+  <line x1="0" y1="240" x2="800" y2="240" stroke="#182030" stroke-width="1"/>
+
+  <!-- 監視器（左上角） -->
+  <rect x="40" y="45" width="24" height="16" fill="#182838" rx="3"/>
+  <circle cx="52" cy="53" r="5" fill="#0e1e2e"/>
+  <circle cx="52" cy="53" r="2.5" fill="#102030" opacity=".9"/>
+  <line x1="52" y1="61" x2="52" y2="72" stroke="#182838" stroke-width="2"/>
+
+  <!-- 電腦螢幕（林小姐用） -->
+  <rect x="220" y="95" width="200" height="130" fill="url(#bk-screen)" rx="5"/>
+  <rect x="220" y="95" width="200" height="16"  fill="#142838" rx="5"/>
+  <!-- 螢幕亮光 -->
+  <rect x="220" y="95" width="200" height="130" fill="#4a90c8" opacity=".04"/>
+  <rect x="230" y="120" width="140" height="5"  fill="#3a80b8" rx="2" opacity=".5"/>
+  <rect x="230" y="135" width="160" height="5"  fill="#3a80b8" rx="2" opacity=".45"/>
+  <rect x="230" y="150" width="120" height="5"  fill="#3a80b8" rx="2" opacity=".5"/>
+  <rect x="230" y="165" width="155" height="5"  fill="#3a80b8" rx="2" opacity=".4"/>
+  <rect x="230" y="180" width="100" height="5"  fill="#3a80b8" rx="2" opacity=".45"/>
+  <!-- 螢幕邊框反光 -->
+  <rect x="220" y="95" width="200" height="3" fill="#5aa0d8" opacity=".2" rx="2"/>
+
+  <!-- 監視器畫面（帳目） -->
+  <rect x="500" y="75" width="220" height="160" fill="#0e1e2e" rx="5"/>
+  <rect x="500" y="75" width="220" height="14"  fill="#c83020" rx="5" opacity=".7"/>
+  <text x="610" y="87" text-anchor="middle" fill="#f0e0d0" font-size="9" font-family="monospace" opacity=".7">監視記錄</text>
+  <rect x="512" y="100" width="80"  height="4" fill="#5a8ab8" rx="2" opacity=".55"/>
+  <rect x="610" y="100" width="98"  height="4" fill="#c03020" rx="2" opacity=".6"/>
+  <rect x="512" y="114" width="195" height="4" fill="#5a8ab8" rx="2" opacity=".45"/>
+  <rect x="512" y="128" width="160" height="4" fill="#5a8ab8" rx="2" opacity=".5"/>
+  <rect x="512" y="142" width="178" height="4" fill="#c03020" rx="2" opacity=".55"/>
+  <rect x="512" y="156" width="140" height="4" fill="#5a8ab8" rx="2" opacity=".45"/>
+  <text x="610" y="220" text-anchor="middle" fill="#c03020" font-size="11" font-family="monospace" opacity=".8">高風險帳戶</text>
+
+  <!-- 銀行櫃台 -->
+  <rect x="0"   y="310" width="800" height="25" fill="#182838"/>
+  <rect x="0"   y="318" width="800" height="202" fill="#0e1520"/>
+  <!-- 玻璃分隔線 -->
+  <rect x="0"   y="310" width="800" height="5" fill="#3a80b8" opacity=".12"/>
+  <!-- 分格 -->
+  <line x1="200" y1="310" x2="200" y2="520" stroke="#1a2a3a" stroke-width="1.5"/>
+  <line x1="400" y1="310" x2="400" y2="520" stroke="#1a2a3a" stroke-width="1.5"/>
+  <line x1="600" y1="310" x2="600" y2="520" stroke="#1a2a3a" stroke-width="1.5"/>
+
+  <!-- 人物：林小姐（左，站在螢幕前） -->
+  <g transform="translate(130,285)">
+    <ellipse cx="0" cy="-16" rx="13" ry="15" fill="#0a1218"/>
+    <rect x="-14" y="-2" width="28" height="50" fill="#0a1218" rx="4"/>
+    <!-- 正式服裝（深色） -->
+    <path d="M -14,5 Q -26,20 -24,38" stroke="#0a1218" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M  14,5 Q  26,20  24,38" stroke="#0a1218" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <rect x="-10" y="46" width="9"  height="28" fill="#0a1218" rx="3"/>
+    <rect x="1"   y="46" width="9"  height="28" fill="#0a1218" rx="3"/>
+  </g>
+
+  <!-- 人物：偵探（右，站著聽） -->
+  <g transform="translate(670,285)">
+    <ellipse cx="0" cy="-20" rx="13" ry="17" fill="#080c14"/>
+    <rect x="-16" y="-38" width="32" height="7" fill="#080c14" rx="2"/>
+    <rect x="-10" y="-52" width="20" height="18" fill="#080c14" rx="3"/>
+    <rect x="-14" y="-4" width="28" height="52" fill="#080c14" rx="4"/>
+    <path d="M -14,8 Q -28,22 -26,38" stroke="#080c14" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M  14,8 Q  28,22  26,38" stroke="#080c14" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <rect x="-10" y="46" width="9"  height="28" fill="#080c14" rx="3"/>
+    <rect x="1"   y="46" width="9"  height="28" fill="#080c14" rx="3"/>
+  </g>
+</svg>`,
+
+  // 派出所
+  police: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="po-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#080e18"/>
+      <stop offset="100%" stop-color="#060c14"/>
+    </linearGradient>
+    <radialGradient id="po-lamp" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#e8d888" stop-opacity=".5"/>
+      <stop offset="100%" stop-color="#e8d888" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="po-soft"><feGaussianBlur stdDeviation="16"/></filter>
+  </defs>
+
+  <rect width="800" height="520" fill="url(#po-bg)"/>
+
+  <!-- 窗（帶百葉窗效果） -->
+  <rect x="550" y="60" width="180" height="140" fill="#081828" rx="4"/>
+  <line x1="550" y1="80"  x2="730" y2="80"  stroke="#0e2838" stroke-width="3"/>
+  <line x1="550" y1="100" x2="730" y2="100" stroke="#0e2838" stroke-width="3"/>
+  <line x1="550" y1="120" x2="730" y2="120" stroke="#0e2838" stroke-width="3"/>
+  <line x1="550" y1="140" x2="730" y2="140" stroke="#0e2838" stroke-width="3"/>
+  <line x1="550" y1="160" x2="730" y2="160" stroke="#0e2838" stroke-width="3"/>
+  <line x1="550" y1="180" x2="730" y2="180" stroke="#0e2838" stroke-width="3"/>
+  <!-- 夜色透光 -->
+  <rect x="550" y="60" width="180" height="140" fill="#1a3a58" opacity=".05"/>
+
+  <!-- 台燈 -->
+  <line x1="400" y1="95" x2="400" y2="230" stroke="#1e2838" stroke-width="5"/>
+  <ellipse cx="400" cy="88" rx="36" ry="16" fill="#c8b840" opacity=".85"/>
+  <ellipse class="glow" cx="400" cy="90" rx="140" ry="100" fill="url(#po-lamp)" filter="url(#po-soft)"/>
+
+  <!-- 辦公桌 -->
+  <rect x="100" y="310" width="600" height="28" fill="#141e2a"/>
+  <rect x="100" y="330" width="600" height="190" fill="#0e1820"/>
+  <!-- 桌腳 -->
+  <rect x="120" y="490" width="18" height="30" fill="#0e1820"/>
+  <rect x="662" y="490" width="18" height="30" fill="#0e1820"/>
+
+  <!-- 卷宗資料夾 -->
+  <rect x="160" y="268" width="90"  height="50" fill="#1e2c3a" rx="3"/>
+  <rect x="160" y="268" width="90"  height="10" fill="#c83020" opacity=".6" rx="3"/>
+  <rect x="168" y="288" width="74"  height="4"  fill="#3a5870" rx="2" opacity=".6"/>
+  <rect x="168" y="300" width="60"  height="4"  fill="#3a5870" rx="2" opacity=".5"/>
+
+  <rect x="268" y="275" width="80"  height="45" fill="#1a2838" rx="3"/>
+  <rect x="268" y="275" width="80"  height="10" fill="#c08820" opacity=".55" rx="3"/>
+  <rect x="276" y="295" width="65"  height="4"  fill="#3a5870" rx="2" opacity=".55"/>
+  <rect x="276" y="307" width="50"  height="4"  fill="#3a5870" rx="2" opacity=".45"/>
+
+  <rect x="365" y="270" width="85"  height="48" fill="#1c2c3c" rx="3"/>
+  <rect x="365" y="270" width="85"  height="10" fill="#2a7830" opacity=".6" rx="3"/>
+
+  <!-- 證據展示：當鋪收據 + 電匯紀錄 -->
+  <rect x="490" y="258" width="140" height="88" fill="#f5ecd8" rx="3" opacity=".9"/>
+  <rect x="490" y="258" width="140" height="16" fill="#c8980a" opacity=".7" rx="3"/>
+  <text x="560" y="271" text-anchor="middle" fill="#4a2000" font-size="8" font-family="serif" letter-spacing="1">當鋪收據</text>
+  <rect x="500" y="282" width="60"  height="3.5" fill="#8a7052" rx="2" opacity=".5"/>
+  <rect x="500" y="294" width="110" height="3.5" fill="#8a7052" rx="2" opacity=".45"/>
+  <rect x="500" y="306" width="90"  height="3.5" fill="#8a7052" rx="2" opacity=".5"/>
+  <text x="560" y="332" text-anchor="middle" fill="#8a2000" font-size="10" font-family="serif" font-weight="bold">$80,000</text>
+
+  <!-- 人物：所長老張（對面，坐姿） -->
+  <g transform="translate(270,278)">
+    <ellipse cx="0" cy="-16" rx="15" ry="16" fill="#080e18"/>
+    <rect x="-18" y="-2" width="36" height="40" fill="#080e18" rx="4"/>
+    <path d="M -18,5 Q -32,18 -28,32" stroke="#080e18" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M  18,5 Q  32,18  28,32" stroke="#080e18" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <!-- 手放在桌上 -->
+    <path d="M -28,32 Q -30,50 -25,55" stroke="#080e18" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M  28,32 Q  30,50  25,55" stroke="#080e18" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- 人物：偵探（右，站著，提交證據） -->
+  <g transform="translate(620,265)">
+    <ellipse cx="0" cy="-22" rx="14" ry="18" fill="#060c14"/>
+    <rect x="-18" y="-40" width="36" height="8" fill="#060c14" rx="2"/>
+    <rect x="-12" y="-55" width="24" height="20" fill="#060c14" rx="3"/>
+    <rect x="-16" y="-4" width="32" height="56" fill="#060c14" rx="5"/>
+    <!-- 手伸出，指向證據 -->
+    <path d="M -16,8 Q -38,12 -52,8" stroke="#060c14" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M  16,8 Q  24,22  22,38" stroke="#060c14" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <rect x="-12" y="50" width="10" height="32" fill="#060c14" rx="3"/>
+    <rect x="2"   y="50" width="10" height="32" fill="#060c14" rx="3"/>
+  </g>
+</svg>`,
+
+  // 重逢結局
+  reunion: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ru-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1a1408"/>
+      <stop offset="40%"  stop-color="#2a200c"/>
+      <stop offset="100%" stop-color="#100c06"/>
+    </linearGradient>
+    <radialGradient id="ru-sun" cx="50%" cy="40%" r="55%">
+      <stop offset="0%"   stop-color="#f5c040" stop-opacity=".45"/>
+      <stop offset="50%"  stop-color="#e89020" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#e89020" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ru-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#f5d060" stop-opacity=".6"/>
+      <stop offset="100%" stop-color="#f5d060" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ru-blur"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="ru-soft"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+
+  <rect width="800" height="520" fill="url(#ru-bg)"/>
+
+  <!-- 朝陽光芒 -->
+  <ellipse class="sunrise" cx="400" cy="210" rx="380" ry="260" fill="url(#ru-sun)" filter="url(#ru-blur)"/>
+
+  <!-- 旅社走廊（背景） -->
+  <!-- 牆面 -->
+  <rect x="0"   y="0"  width="800" height="520" fill="#120e08" opacity=".3"/>
+  <!-- 走廊地板透視線 -->
+  <path d="M 0,520 L 350,310 L 450,310 L 800,520 Z" fill="#1c1608" opacity=".6"/>
+  <line x1="0"   y1="520" x2="350" y2="310" stroke="#2a2010" stroke-width="1.5"/>
+  <line x1="800" y1="520" x2="450" y2="310" stroke="#2a2010" stroke-width="1.5"/>
+  <!-- 天花板線 -->
+  <line x1="0"   y1="0"   x2="350" y2="310" stroke="#2a2010" stroke-width="1" opacity=".5"/>
+  <line x1="800" y1="0"   x2="450" y2="310" stroke="#2a2010" stroke-width="1" opacity=".5"/>
+
+  <!-- 牆上燈（走廊） -->
+  <rect x="90"  y="200" width="18" height="28" fill="#c89830" opacity=".6"/>
+  <ellipse cx="99"  cy="200" rx="50" ry="38" fill="url(#ru-glow)" filter="url(#ru-soft)" opacity=".7"/>
+  <rect x="680" y="200" width="18" height="28" fill="#c89830" opacity=".6"/>
+  <ellipse cx="689" cy="200" rx="50" ry="38" fill="url(#ru-glow)" filter="url(#ru-soft)" opacity=".7"/>
+
+  <!-- 門（背景，半開） -->
+  <rect x="330" y="120" width="140" height="190" fill="#180e06" rx="3"/>
+  <rect x="330" y="120" width="140" height="4" fill="#3a2810" rx="2"/>
+  <!-- 門縫透光 -->
+  <rect x="470" y="120" width="8" height="190" fill="#f5c040" opacity=".15"/>
+
+  <!-- 擁抱的人物（兩個重疊的剪影） -->
+  <g class="embrace" transform="translate(400,270)">
+    <!-- 阿公（較矮，被擁抱） -->
+    <ellipse cx="-6" cy="-65" rx="16" ry="18" fill="#0e0c08"/>
+    <rect    x="-22" y="-48" width="32" height="65" fill="#0e0c08" rx="5"/>
+    <rect    x="-18" y="15"  width="12" height="45" fill="#0e0c08" rx="3"/>
+    <rect    x="-4"  y="15"  width="12" height="45" fill="#0e0c08" rx="3"/>
+    <!-- 低頭 -->
+    <ellipse cx="-4" cy="-60" rx="14" ry="16" fill="#0a0806"/>
+
+    <!-- 陳秀蘭（右側，抱著阿公） -->
+    <ellipse cx="18" cy="-75" rx="13" ry="15" fill="#0a0806"/>
+    <!-- 頭髮 -->
+    <ellipse cx="18" cy="-88" rx="9"  ry="7"  fill="#0a0806"/>
+    <rect    x="8"  y="-61"  width="26" height="58" fill="#0a0806" rx="4"/>
+    <rect    x="10" y="-4"   width="10" height="40" fill="#0a0806" rx="3"/>
+    <rect    x="22" y="-4"   width="10" height="40" fill="#0a0806" rx="3"/>
+    <!-- 擁抱的手臂 -->
+    <path d=" 8,-50 Q -18,-38 -22,-20" stroke="#0a0806" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="34,-50 Q  38,-30  30,-18" stroke="#0a0806" stroke-width="9"  fill="none" stroke-linecap="round"/>
+
+    <!-- 暖光環繞 -->
+    <ellipse cx="6" cy="-30" rx="60" ry="70" fill="#f5c040" opacity=".04" filter="url(#ru-soft)"/>
+  </g>
+
+  <!-- 地板陰影 -->
+  <ellipse cx="400" cy="480" rx="80" ry="18" fill="#0a0806" opacity=".5"/>
+</svg>`,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CinematicPlayer
+// ─────────────────────────────────────────────────────────────────────────────
+export class CinematicPlayer {
+  constructor(root, script) {
+    this._root   = root;
+    this._script = script;
+    this._si     = 0;   // scene index
+    this._bi     = 0;   // beat index
+    this._timer  = null;
+    this._totalBeats = script.reduce((s, sc) => s + sc.beats.length, 0);
+    this._doneBeat   = 0;
+  }
+
+  // ── 初始化 ──────────────────────────────────────────────
+  start() {
+    this._injectCSS();
+    this._buildLayout();
+    this._playBeat();
+  }
+
+  _injectCSS() {
+    if (document.getElementById('cin-css')) return;
+    const el = document.createElement('style');
+    el.id = 'cin-css';
+    el.textContent = CSS;
+    document.head.appendChild(el);
+  }
+
+  _buildLayout() {
+    this._root.innerHTML = `
+      <div id="cin-stage">
+        <div id="cin-scene-panel">
+          <div id="cin-scene-art"></div>
+          <div class="scene-label-overlay" id="cin-scene-label"></div>
+        </div>
+        <div id="cin-narration">
+          <div id="cin-header">
+            <div id="cin-scene-num"></div>
+            <div id="cin-scene-title"></div>
+          </div>
+          <div id="cin-beats"></div>
+          <div id="cin-progress">
+            <div id="cin-progress-fill"></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Beat 播放 ────────────────────────────────────────────
+  _playBeat() {
+    const scene = this._script[this._si];
+    if (!scene) { this._showEnding(); return; }
+
+    // 第一 beat：切換場景
+    if (this._bi === 0) this._transitionScene(scene);
+
+    const beat = scene.beats[this._bi];
+    if (!beat) {
+      // 本場結束：顯示線索卡（如有），再進下一場
+      if (scene.clueUnlock) {
+        this._appendClue(scene.clueUnlock);
+        this._timer = setTimeout(() => { this._si++; this._bi = 0; this._playBeat(); }, 2800);
+      } else {
+        this._si++; this._bi = 0; this._playBeat();
+      }
+      return;
+    }
+
+    this._appendBeat(beat);
+    this._doneBeat++;
+    this._updateProgress();
+
+    this._timer = setTimeout(() => { this._bi++; this._playBeat(); }, beat.ms);
+  }
+
+  // ── 場景轉換 ─────────────────────────────────────────────
+  _transitionScene(scene) {
+    const art   = document.getElementById('cin-scene-art');
+    const label = document.getElementById('cin-scene-label');
+    const num   = document.getElementById('cin-scene-num');
+    const title = document.getElementById('cin-scene-title');
+
+    art.innerHTML = SCENE_ART[scene.sceneKey] || '';
+    label.textContent = scene.title;
+    num.textContent   = `第 ${this._si + 1} 場 · ${String(this._si + 1).padStart(2, '0')}`;
+    title.textContent = scene.title.replace(/^第.+?· /, '');
+
+    document.getElementById('cin-beats').innerHTML = '';
+  }
+
+  // ── 渲染單一 Beat ────────────────────────────────────────
+  _appendBeat(beat) {
+    const container = document.getElementById('cin-beats');
+    const el = document.createElement('div');
+    el.className = `cin-beat b-${beat.type}`;
+
+    if (beat.type === 'dialogue') {
+      el.innerHTML = `<span class="cin-speaker">${beat.speaker}</span><span class="cin-text"></span>`;
+    } else {
+      el.innerHTML = `<span class="cin-text"></span>`;
+    }
+
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+
+    const textEl = el.querySelector('.cin-text');
+    this._typewriter(textEl, beat.text, beat.ms);
+  }
+
+  _appendClue(clue) {
+    const container = document.getElementById('cin-beats');
+    const el = document.createElement('div');
+    el.className = 'cin-clue';
+    el.innerHTML = `
+      <span class="cin-clue-icon">${clue.icon}</span>
+      <div>
+        <span class="cin-clue-label">${clue.label}</span>
+        <span class="cin-clue-detail">${clue.detail}</span>
+      </div>`;
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // ── Typewriter ────────────────────────────────────────────
+  _typewriter(el, text, totalMs) {
+    const typingMs = Math.min(totalMs * 0.62, text.length * 38, 5200);
+    const perChar  = typingMs / text.length;
+    let i = 0;
+    const tick = setInterval(() => {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) clearInterval(tick);
+    }, perChar);
+  }
+
+  // ── 進度條 ────────────────────────────────────────────────
+  _updateProgress() {
+    const pct = (this._doneBeat / this._totalBeats) * 100;
+    const bar = document.getElementById('cin-progress-fill');
+    if (bar) bar.style.width = `${pct}%`;
+  }
+
+  // ── 結局蓋板 ──────────────────────────────────────────────
+  _showEnding() {
+    const stage = document.getElementById('cin-stage');
+    const overlay = document.createElement('div');
+    overlay.id = 'cin-ending-overlay';
+    overlay.innerHTML = `
+      <div class="cin-ending-card">
+        <h2>📦 Evidence Pack</h2>
+        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">full_solve</span></div>
+        <div class="cin-ep-row"><span class="cin-ep-key">線索收集</span><span class="cin-ep-val">📋 當鋪收據 · 🏦 電匯紀錄</span></div>
+        <div class="cin-ep-row">
+          <span class="cin-ep-key">行為標籤</span>
+          <span class="cin-ep-val">
+            <span class="cin-ep-tag">evidence_seeking</span>
+            <span class="cin-ep-tag">deductive_reasoning</span>
+            <span class="cin-ep-tag">fraud_recognition</span>
+          </span>
+        </div>
+        <div class="cin-ep-row"><span class="cin-ep-key">追回金額</span><span class="cin-ep-val">NT$620,000</span></div>
+        <div><span class="cin-ep-badge">✓ Chapter 0 完成</span></div>
+        <button id="cin-replay-btn">重新播放</button>
+      </div>`;
+    stage.appendChild(overlay);
+
+    document.getElementById('cin-replay-btn').addEventListener('click', () => {
+      overlay.remove();
+      this._si = 0; this._bi = 0; this._doneBeat = 0;
+      this._buildLayout();
+      this._playBeat();
+    });
+  }
+}
