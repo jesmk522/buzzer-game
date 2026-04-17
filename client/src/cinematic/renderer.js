@@ -1015,6 +1015,300 @@ const SCENE_ART = {
   <!-- 地板陰影 -->
   <ellipse cx="400" cy="480" rx="80" ry="18" fill="#0a0806" opacity=".5"/>
 </svg>`,
+
+  // ── 經濟學家模組：辦公室 2006（明亮 · 樂觀）─────────────
+  office: `<svg viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="offBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2744"/>
+      <stop offset="100%" stop-color="#0e1a30"/>
+    </linearGradient>
+    <linearGradient id="chartUp" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#2a9d5c" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#2a9d5c" stop-opacity=".7"/>
+    </linearGradient>
+    <filter id="offGlow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- 背景 -->
+  <rect width="800" height="540" fill="url(#offBg)"/>
+  <!-- 窗外夜景 -->
+  <rect x="520" y="60" width="220" height="280" rx="4" fill="#0a1525"/>
+  <!-- 城市燈光 -->
+  <rect x="535" y="200" width="6" height="4" fill="#f5d77e" opacity=".9"/>
+  <rect x="548" y="190" width="4" height="6" fill="#f5d77e" opacity=".7"/>
+  <rect x="560" y="210" width="6" height="3" fill="#f5d77e" opacity=".8"/>
+  <rect x="575" y="195" width="5" height="5" fill="#a3c4f5" opacity=".6"/>
+  <rect x="590" y="205" width="4" height="4" fill="#f5d77e" opacity=".9"/>
+  <rect x="605" y="188" width="7" height="3" fill="#f5d77e" opacity=".7"/>
+  <rect x="620" y="215" width="5" height="5" fill="#a3c4f5" opacity=".8"/>
+  <rect x="640" y="200" width="6" height="4" fill="#f5d77e" opacity=".6"/>
+  <rect x="655" y="190" width="4" height="7" fill="#f5d77e" opacity=".9"/>
+  <rect x="670" y="210" width="5" height="3" fill="#a3c4f5" opacity=".7"/>
+  <rect x="690" y="195" width="6" height="4" fill="#f5d77e" opacity=".8"/>
+  <rect x="540" y="240" width="5" height="3" fill="#f5d77e" opacity=".5"/>
+  <rect x="555" y="250" width="7" height="4" fill="#f5d77e" opacity=".7"/>
+  <rect x="575" y="235" width="4" height="5" fill="#a3c4f5" opacity=".6"/>
+  <!-- 牆面 -->
+  <rect x="0" y="0" width="500" height="540" fill="#16213a"/>
+  <!-- 地板 -->
+  <rect x="0" y="420" width="800" height="120" fill="#0e1625"/>
+  <!-- 書桌 -->
+  <rect x="80" y="310" width="380" height="20" rx="3" fill="#1e2d4a"/>
+  <rect x="100" y="330" width="15" height="90" fill="#1e2d4a"/>
+  <rect x="430" y="330" width="15" height="90" fill="#1e2d4a"/>
+  <!-- 螢幕 -->
+  <rect x="170" y="230" width="200" height="130" rx="4" fill="#0a1220"/>
+  <rect x="174" y="234" width="192" height="122" rx="2" fill="#0d1f3a"/>
+  <!-- 上升折線圖 -->
+  <polyline points="190,340 220,320 250,315 280,300 310,285 340,270 355,260" stroke="#2a9d5c" stroke-width="2.5" fill="none"/>
+  <polygon points="190,340 220,320 250,315 280,300 310,285 340,270 355,260 355,344" fill="url(#chartUp)"/>
+  <!-- Y軸 -->
+  <line x1="190" y1="250" x2="190" y2="345" stroke="#2d4a6e" stroke-width="1"/>
+  <!-- X軸 -->
+  <line x1="190" y1="345" x2="360" y2="345" stroke="#2d4a6e" stroke-width="1"/>
+  <!-- 螢幕標題 -->
+  <text x="270" y="250" text-anchor="middle" font-size="9" fill="#4a8fc4" font-family="monospace">HOUSING INDEX 2006</text>
+  <!-- 滑鼠 -->
+  <ellipse cx="395" cy="318" rx="10" ry="13" fill="#1a2d4a"/>
+  <!-- 咖啡杯 -->
+  <rect x="130" y="295" width="22" height="18" rx="3" fill="#2a3f5f"/>
+  <path d="M152 302 Q160 302 160 308 Q160 314 152 314" stroke="#3a5070" stroke-width="1.5" fill="none"/>
+  <!-- 資料夾 -->
+  <rect x="80" y="290" width="40" height="25" rx="2" fill="#c8922a" opacity=".7"/>
+  <rect x="80" y="287" width="20" height="5" rx="1" fill="#c8922a" opacity=".9"/>
+  <!-- 書 -->
+  <rect x="430" y="280" width="30" height="35" rx="2" fill="#3a5c8a"/>
+  <rect x="435" y="280" width="2" height="35" fill="#1a3052"/>
+  <!-- 人物輪廓（坐姿） -->
+  <ellipse cx="270" cy="215" rx="22" ry="22" fill="#1a2d4a"/>
+  <rect x="248" y="235" width="44" height="50" rx="6" fill="#1a2d4a"/>
+  <!-- 螢幕光照 -->
+  <ellipse cx="270" cy="240" rx="100" ry="60" fill="#1a4a8a" opacity=".05"/>
+</svg>`,
+
+  // ── 經濟學家模組：數據室（緊張 · 螢幕堆疊）──────────────
+  data: `<svg viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dataBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f1920"/>
+      <stop offset="100%" stop-color="#080e14"/>
+    </linearGradient>
+    <filter id="screenGlow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="redLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c0392b" stop-opacity=".1"/>
+      <stop offset="50%" stop-color="#c0392b" stop-opacity=".8"/>
+      <stop offset="100%" stop-color="#c0392b" stop-opacity=".1"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="540" fill="url(#dataBg)"/>
+  <!-- 三個螢幕 -->
+  <!-- 左螢幕 -->
+  <rect x="30" y="120" width="220" height="150" rx="4" fill="#0a1218"/>
+  <rect x="34" y="124" width="212" height="142" rx="2" fill="#0b1a24"/>
+  <polyline points="50,250 80,235 110,238 140,220 170,210 200,195 225,185" stroke="#e67e22" stroke-width="2" fill="none" opacity=".9"/>
+  <text x="140" y="140" text-anchor="middle" font-size="8" fill="#e67e22" font-family="monospace" opacity=".8">DELINQUENCY RATE</text>
+  <text x="140" y="152" text-anchor="middle" font-size="11" fill="#e67e22" font-family="monospace">+0.8% MoM</text>
+  <!-- 中螢幕（主）-->
+  <rect x="270" y="80" width="260" height="200" rx="4" fill="#0a1218"/>
+  <rect x="274" y="84" width="252" height="192" rx="2" fill="#0c1e2c"/>
+  <!-- 數字表格 -->
+  <text x="280" y="105" font-size="8" fill="#4a7fa0" font-family="monospace">SUBPRIME EXPOSURE · MAJOR INSTITUTIONS</text>
+  <line x1="280" y1="112" x2="518" y2="112" stroke="#1e3a52" stroke-width="1"/>
+  <text x="285" y="128" font-size="8.5" fill="#8ab8d4" font-family="monospace">Bank A        12.4B    ▲</text>
+  <text x="285" y="143" font-size="8.5" fill="#8ab8d4" font-family="monospace">Bank B         8.9B    ▲</text>
+  <text x="285" y="158" font-size="8.5" fill="#e67e22" font-family="monospace">Bank C        22.1B    ▲▲</text>
+  <text x="285" y="173" font-size="8.5" fill="#8ab8d4" font-family="monospace">Bank D        15.7B    ▲</text>
+  <text x="285" y="188" font-size="8.5" fill="#c0392b" font-family="monospace">Leverage avg   28x    !!</text>
+  <line x1="280" y1="198" x2="518" y2="198" stroke="#1e3a52" stroke-width="1"/>
+  <text x="285" y="212" font-size="8" fill="#c0392b" font-family="monospace">⚠ SYSTEMIC RISK INDICATOR: ELEVATED</text>
+  <text x="400" y="260" text-anchor="middle" font-size="9" fill="#4a7fa0" font-family="monospace">CROSS-INSTITUTIONAL EXPOSURE · 2007 Q1</text>
+  <!-- 右螢幕 -->
+  <rect x="550" y="120" width="220" height="150" rx="4" fill="#0a1218"/>
+  <rect x="554" y="124" width="212" height="142" rx="2" fill="#0b1a24"/>
+  <text x="660" y="142" text-anchor="middle" font-size="8" fill="#2ecc71" font-family="monospace">FED FUNDS RATE</text>
+  <polyline points="566,240 596,240 626,238 656,230 686,222 726,218 748,215" stroke="#2ecc71" stroke-width="2" fill="none" opacity=".7"/>
+  <!-- 書桌 -->
+  <rect x="0" y="310" width="800" height="20" rx="2" fill="#101e2a"/>
+  <rect x="0" y="330" width="800" height="210" fill="#090f16"/>
+  <!-- 鍵盤 -->
+  <rect x="290" y="318" width="220" height="12" rx="2" fill="#142030"/>
+  <!-- 列印出來的報告 -->
+  <rect x="60" y="318" width="180" height="100" rx="2" fill="#0e1c28"/>
+  <line x1="75" y1="335" x2="225" y2="335" stroke="#1e3a52" stroke-width="1"/>
+  <line x1="75" y1="348" x2="200" y2="348" stroke="#1e3a52" stroke-width="1"/>
+  <line x1="75" y1="361" x2="215" y2="361" stroke="#1e3a52" stroke-width="1"/>
+  <text x="150" y="330" text-anchor="middle" font-size="7" fill="#4a7fa0" font-family="monospace">SUBPRIME ANALYSIS · DRAFT</text>
+  <!-- 熱區光暈 -->
+  <ellipse cx="400" cy="200" rx="200" ry="100" fill="#0a2a40" opacity=".15"/>
+</svg>`,
+
+  // ── 經濟學家模組：新聞室（Breaking News 牆）─────────────
+  newsroom: `<svg viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="newsBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0e1520"/>
+      <stop offset="100%" stop-color="#080c14"/>
+    </linearGradient>
+    <filter id="newsGlow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="800" height="540" fill="url(#newsBg)"/>
+  <!-- 大型 TV 牆 -->
+  <!-- TV 1 （Bloomberg）-->
+  <rect x="40" y="60" width="320" height="200" rx="4" fill="#050a10"/>
+  <rect x="44" y="64" width="312" height="192" rx="2" fill="#070f1a"/>
+  <!-- Breaking news bar -->
+  <rect x="44" y="220" width="312" height="32" fill="#c0392b"/>
+  <text x="60" y="241" font-size="11" fill="white" font-family="sans-serif" font-weight="bold">BREAKING NEWS</text>
+  <!-- 頭條 -->
+  <text x="200" y="120" text-anchor="middle" font-size="10" fill="#a3c4e0" font-family="monospace">Bloomberg Terminal</text>
+  <text x="200" y="145" text-anchor="middle" font-size="13" fill="white" font-family="sans-serif" font-weight="bold">Bear Stearns Funds</text>
+  <text x="200" y="163" text-anchor="middle" font-size="13" fill="white" font-family="sans-serif" font-weight="bold">Collapse: $1.6B Loss</text>
+  <text x="200" y="185" text-anchor="middle" font-size="9" fill="#a3c4e0" font-family="monospace">August 1, 2007 · 14:32 EST</text>
+  <!-- 跑馬燈文字 -->
+  <text x="200" y="248" text-anchor="middle" font-size="9" fill="white" font-family="monospace">SUBPRIME EXPOSURE WIDER THAN ESTIMATED · FED MONITORING SITUATION</text>
+  <!-- TV 2 （CNBC）-->
+  <rect x="380" y="60" width="380" height="200" rx="4" fill="#050a10"/>
+  <rect x="384" y="64" width="372" height="192" rx="2" fill="#070f1a"/>
+  <rect x="384" y="220" width="372" height="32" fill="#1a3a6a"/>
+  <text x="570" y="120" text-anchor="middle" font-size="10" fill="#a3c4e0" font-family="monospace">CNBC · Market Watch</text>
+  <!-- 折線圖（下跌）-->
+  <polyline points="400,190 430,185 460,182 490,170 520,155 550,140 580,125 610,118 640,108 670,100 700,90 730,80" stroke="#c0392b" stroke-width="2.5" fill="none"/>
+  <polyline points="400,190 430,185 460,182 490,170 520,155 550,140 580,125 610,118 640,108 670,100 700,90 730,80 730,192" fill="#c0392b" fill-opacity=".08"/>
+  <text x="570" y="140" text-anchor="middle" font-size="9" fill="#c0392b" font-family="monospace">ABX INDEX · SUBPRIME MBS</text>
+  <text x="570" y="156" text-anchor="middle" font-size="9" fill="#e74c3c" font-family="monospace">▼ -18.4% YTD</text>
+  <!-- 電話 -->
+  <rect x="40" y="310" width="720" height="15" rx="2" fill="#0e1a26"/>
+  <!-- 辦公桌 -->
+  <rect x="0" y="325" width="800" height="215" fill="#060c14"/>
+  <!-- 電話響 -->
+  <rect x="60" y="335" width="60" height="40" rx="4" fill="#0e1e2e"/>
+  <ellipse cx="90" cy="345" rx="12" ry="5" fill="#1a2e40"/>
+  <!-- 筆記本 -->
+  <rect x="200" y="333" width="120" height="80" rx="2" fill="#0b1620"/>
+  <line x1="215" y1="348" x2="305" y2="348" stroke="#1a2e40" stroke-width="1"/>
+  <line x1="215" y1="360" x2="290" y2="360" stroke="#1a2e40" stroke-width="1"/>
+  <line x1="215" y1="372" x2="300" y2="372" stroke="#1a2e40" stroke-width="1"/>
+  <text x="215" y="344" font-size="7" fill="#3a5a7a" font-family="monospace">→ systemic?</text>
+  <text x="215" y="357" font-size="7" fill="#3a5a7a" font-family="monospace">→ leverage 28x</text>
+  <text x="215" y="370" font-size="7" fill="#c0392b" font-family="monospace">→ not isolated!!</text>
+  <!-- 人物輪廓 -->
+  <ellipse cx="560" cy="300" rx="20" ry="20" fill="#0e1a26"/>
+  <rect x="540" y="318" width="40" height="55" rx="4" fill="#0e1a26"/>
+</svg>`,
+
+  // ── 經濟學家模組：危機（Lehman 紅盤）───────────────────
+  crisis: `<svg viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="crisisBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0808"/>
+      <stop offset="100%" stop-color="#0a0404"/>
+    </linearGradient>
+    <filter id="redPulse">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="redAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8b0000" stop-opacity=".4"/>
+      <stop offset="100%" stop-color="#8b0000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="540" fill="url(#crisisBg)"/>
+  <!-- 紅色氛圍光 -->
+  <ellipse cx="400" cy="200" rx="380" ry="200" fill="url(#redAura)"/>
+  <!-- 主螢幕 -->
+  <rect x="100" y="50" width="600" height="340" rx="6" fill="#0a0404"/>
+  <rect x="104" y="54" width="592" height="332" rx="4" fill="#0e0606"/>
+  <!-- Breaking alert bar -->
+  <rect x="104" y="54" width="592" height="44" fill="#8b0000"/>
+  <text x="400" y="73" text-anchor="middle" font-size="13" fill="white" font-family="sans-serif" font-weight="bold">⚠ MARKET ALERT — EXTREME VOLATILITY</text>
+  <text x="400" y="90" text-anchor="middle" font-size="10" fill="#ffaaaa" font-family="monospace">September 15, 2008 · 08:47 EST</text>
+  <!-- 大頭條 -->
+  <text x="400" y="145" text-anchor="middle" font-size="22" fill="#ff4444" font-family="sans-serif" font-weight="bold">LEHMAN BROTHERS</text>
+  <text x="400" y="170" text-anchor="middle" font-size="16" fill="#ff8888" font-family="sans-serif">FILES FOR CHAPTER 11 BANKRUPTCY</text>
+  <!-- 下跌指標 -->
+  <text x="200" y="215" text-anchor="middle" font-size="11" fill="#ff6666" font-family="monospace">DOW JONES</text>
+  <text x="200" y="232" text-anchor="middle" font-size="16" fill="#ff2222" font-family="monospace" font-weight="bold">▼ -4.42%</text>
+  <text x="400" y="215" text-anchor="middle" font-size="11" fill="#ff6666" font-family="monospace">S&amp;P 500</text>
+  <text x="400" y="232" text-anchor="middle" font-size="16" fill="#ff2222" font-family="monospace" font-weight="bold">▼ -4.71%</text>
+  <text x="600" y="215" text-anchor="middle" font-size="11" fill="#ff6666" font-family="monospace">VIX</text>
+  <text x="600" y="232" text-anchor="middle" font-size="16" fill="#ff8c00" font-family="monospace" font-weight="bold">▲ 42.16</text>
+  <!-- 崩跌折線 -->
+  <polyline points="120,300 160,295 200,290 240,285 280,282 320,275 360,260 400,235 440,200 480,170 520,148 560,132 600,118 640,105 680,90" stroke="#ff3333" stroke-width="3" fill="none"/>
+  <polyline points="120,300 160,295 200,290 240,285 280,282 320,275 360,260 400,235 440,200 480,170 520,148 560,132 600,118 640,105 680,90 680,368" fill="#8b0000" fill-opacity=".12"/>
+  <!-- 書桌 -->
+  <rect x="0" y="400" width="800" height="140" fill="#060202"/>
+  <!-- 電話 + 人物輪廓 -->
+  <ellipse cx="150" cy="390" rx="22" ry="22" fill="#140606"/>
+  <rect x="128" y="410" width="44" height="60" rx="5" fill="#140606"/>
+  <!-- 咖啡杯翻倒 -->
+  <rect x="320" y="410" width="18" height="22" rx="2" fill="#1a0606" transform="rotate(25 320 410)"/>
+  <!-- 散落的紙張 -->
+  <rect x="400" y="408" width="80" height="50" rx="2" fill="#120404" transform="rotate(-8 400 408)"/>
+  <rect x="490" y="412" width="60" height="40" rx="2" fill="#120404" transform="rotate(5 490 412)"/>
+</svg>`,
+
+  // ── 經濟學家模組：事後辦公室（2009 · 靜謐）─────────────
+  aftermath: `<svg viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="afterBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#101820"/>
+      <stop offset="100%" stop-color="#080e14"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="540" fill="url(#afterBg)"/>
+  <!-- 窗外黎明 -->
+  <rect x="500" y="40" width="260" height="300" rx="4" fill="#0a1020"/>
+  <rect x="510" y="50" width="240" height="280" fill="#0d1825"/>
+  <!-- 天空漸層（微光）-->
+  <linearGradient id="dawnSky" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0%" stop-color="#0d1825"/>
+    <stop offset="60%" stop-color="#112038"/>
+    <stop offset="100%" stop-color="#1a3a5a"/>
+  </linearGradient>
+  <rect x="510" y="50" width="240" height="200" fill="url(#dawnSky)"/>
+  <!-- 地平線微光 -->
+  <ellipse cx="630" cy="250" rx="100" ry="20" fill="#c8803a" opacity=".15"/>
+  <ellipse cx="630" cy="250" rx="60" ry="10" fill="#c8803a" opacity=".2"/>
+  <!-- 城市剪影 -->
+  <rect x="510" y="210" width="30" height="120" fill="#060c14"/>
+  <rect x="545" y="230" width="20" height="100" fill="#060c14"/>
+  <rect x="570" y="200" width="40" height="130" fill="#060c14"/>
+  <rect x="616" y="220" width="25" height="110" fill="#060c14"/>
+  <rect x="646" y="190" width="35" height="140" fill="#060c14"/>
+  <rect x="685" y="215" width="28" height="115" fill="#060c14"/>
+  <rect x="718" y="240" width="32" height="90" fill="#060c14"/>
+  <!-- 辦公室空間 -->
+  <rect x="0" y="0" width="480" height="540" fill="#0e1822"/>
+  <!-- 空椅子（象徵裁員）-->
+  <rect x="60" y="310" width="80" height="10" rx="2" fill="#0c1820"/>
+  <rect x="80" y="320" width="10" height="80" fill="#0c1820"/>
+  <rect x="115" y="320" width="10" height="80" fill="#0c1820"/>
+  <rect x="60" y="360" width="80" height="8" rx="2" fill="#0c1820"/>
+  <!-- 第二張空椅 -->
+  <rect x="200" y="310" width="80" height="10" rx="2" fill="#0c1820"/>
+  <rect x="220" y="320" width="10" height="80" fill="#0c1820"/>
+  <rect x="255" y="320" width="10" height="80" fill="#0c1820"/>
+  <rect x="200" y="360" width="80" height="8" rx="2" fill="#0c1820"/>
+  <!-- 桌上螢幕（只剩一個亮著）-->
+  <rect x="310" y="200" width="150" height="100" rx="4" fill="#080e16"/>
+  <rect x="314" y="204" width="142" height="92" rx="2" fill="#0b1624"/>
+  <!-- 螢幕上：折線圖慢慢回升 -->
+  <polyline points="326,280 346,278 366,272 386,265 406,258 426,252 446,248" stroke="#2a9d5c" stroke-width="2" fill="none" opacity=".6"/>
+  <text x="385" y="220" text-anchor="middle" font-size="8" fill="#3a6a50" font-family="monospace">RECOVERY ·  SLOW</text>
+  <!-- 主角輪廓（獨自坐著）-->
+  <ellipse cx="385" cy="185" rx="20" ry="20" fill="#0c1820"/>
+  <rect x="365" y="203" width="40" height="55" rx="5" fill="#0c1820"/>
+  <!-- 桌面文件 -->
+  <rect x="310" y="308" width="150" height="90" fill="#080e16"/>
+  <!-- 便利貼 -->
+  <rect x="420" y="250" width="40" height="35" rx="2" fill="#1a3040" opacity=".8"/>
+  <text x="425" y="265" font-size="7" fill="#4a8ab0" font-family="monospace">signals</text>
+  <text x="425" y="276" font-size="7" fill="#4a8ab0" font-family="monospace">were</text>
+  <text x="425" y="287" font-size="7" fill="#c0392b" font-family="monospace">there.</text>
+  <!-- 地板陰影 -->
+  <rect x="0" y="420" width="800" height="120" fill="#060c14"/>
+</svg>`,
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
