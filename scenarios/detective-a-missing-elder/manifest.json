@@ -1,0 +1,80 @@
+{
+  "scenario_id": "detective-a-missing-elder",
+  "title": "老街失蹤疑雲",
+  "author": "Buzzer Team",
+  "license": "UNLICENSED-internal-to-buzzer",
+  "theme": "anti_fraud_family",
+  "difficulty": "medium",
+  "duration_minutes_estimate": 25,
+  "chapters": [
+    {
+      "id": "ch0",
+      "title": "開場 · 老街茶行",
+      "ink_file": "chapter-0.ink",
+      "scenes": 4,
+      "clues": ["pawn_receipt", "bank_slip", "grandson_message"],
+      "endings": ["full_solve", "partial_solve"],
+      "status": "draft_v1"
+    }
+  ],
+  "evidence_tags_emitted": [
+    "evidence_seeking",
+    "deductive_reasoning",
+    "critical_thinking",
+    "fraud_recognition",
+    "resists_confirmation_bias"
+  ],
+  "characters": [
+    {
+      "id": "chen_xiu_lan",
+      "display_name": "陳秀蘭",
+      "role": "報案人（茶行老闆娘）",
+      "avatar": "👩",
+      "is_fictional": true
+    },
+    {
+      "id": "grandpa_chen",
+      "display_name": "陳阿公",
+      "role": "失蹤者",
+      "avatar": "👴",
+      "is_fictional": true
+    },
+    {
+      "id": "ming_breakfast",
+      "display_name": "阿明",
+      "role": "早餐店老闆（證人）",
+      "avatar": "👨‍🍳",
+      "is_fictional": true
+    },
+    {
+      "id": "pawn_wang",
+      "display_name": "王老闆",
+      "role": "永樂當鋪老闆",
+      "avatar": "🧔",
+      "is_fictional": true
+    },
+    {
+      "id": "bank_lin",
+      "display_name": "林小姐",
+      "role": "銀行大堂經理",
+      "avatar": "👩‍💼",
+      "is_fictional": true
+    },
+    {
+      "id": "police_zhang",
+      "display_name": "張所長",
+      "role": "派出所所長",
+      "avatar": "👮",
+      "is_fictional": true
+    }
+  ],
+  "enterprise_buyer_hint": {
+    "primary": ["保險業（失智長輩保險核保）", "地方政府（反詐教育 KPI）"],
+    "evidence_fields_cited": ["evidence_tags", "reasoning_trace", "outcomes.decisive_clues_found"]
+  },
+  "compliance_notes": [
+    "所有角色為虛構，姓名不得對應真實人物",
+    "詐騙手法描寫僅為『識別』，不提供『如何實施』",
+    "不含法律或投資建議"
+  ]
+}

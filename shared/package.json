@@ -1,0 +1,13 @@
+{
+  "name": "@buzzer-game/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Buzzer 問答 + 偵探共用模組（Evidence Pack、型別、ink 載入器）",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./evidence-pack": "./evidence-pack/index.js",
+    "./types": "./types/index.js"
+  }
+}

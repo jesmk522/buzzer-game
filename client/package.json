@@ -1,0 +1,22 @@
+{
+  "name": "@buzzer-game/client",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Buzzer 遊戲 client — Phase 1 問答 + Phase 2 偵探（inkjs runtime）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@buzzer-game/shared": "*",
+    "inkjs": "^2.2.2"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

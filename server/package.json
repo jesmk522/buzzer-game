@@ -1,0 +1,19 @@
+{
+  "name": "@buzzer-game/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Buzzer 遊戲 server — Evidence Pack 簽章 + 題庫/章節 API",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@buzzer-game/shared": "*",
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  }
+}
