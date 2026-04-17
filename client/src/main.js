@@ -128,7 +128,12 @@ function showSelector() {
       const mod = [...MODULES.detective, ...MODULES.economist].find(m => m.id === id);
       if (!mod) return;
       root.innerHTML = '';
-      new CinematicPlayer(root, { scenes: mod.scenes, startId: mod.start, dashMeta: mod.dashMeta || null }).start();
+      new CinematicPlayer(root, {
+        scenes:   mod.scenes,
+        startId:  mod.start,
+        dashMeta: mod.dashMeta || null,
+        onHome:   showSelector,
+      }).start();
     });
   });
 }

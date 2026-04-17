@@ -224,8 +224,10 @@ const CSS = `
 .cin-ep-val { color: rgba(230,224,208,0.9); text-align: right; }
 .cin-ep-tag { display: inline-block; margin: 0.25rem 0.15rem 0; padding: 0.18rem 0.5rem; background: rgba(75,138,210,0.12); border: 1px solid rgba(75,138,210,0.25); border-radius: 100px; color: rgba(150,195,255,0.85); font-size: 0.62rem; letter-spacing: 0.04em; }
 .cin-ep-badge { display: inline-block; margin-top: 1.2rem; padding: 0.35rem 1rem; background: rgba(60,150,80,0.14); border: 1px solid rgba(80,180,100,0.28); border-radius: 100px; color: rgba(120,200,130,0.9); font-size: 0.72rem; letter-spacing: 0.08em; }
-#cin-replay-btn { margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: transparent; border: 1px solid rgba(200,152,58,0.35); border-radius: 6px; color: rgba(200,152,58,0.8); font-size: 0.78rem; font-family: inherit; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
-#cin-replay-btn:hover { background: rgba(200,152,58,0.1); border-color: rgba(200,152,58,0.6); color: rgba(200,152,58,1); }
+#cin-replay-btn, #cin-home-end-btn { padding: 0.6rem 1.5rem; background: transparent; border: 1px solid rgba(200,152,58,0.35); border-radius: 6px; color: rgba(200,152,58,0.8); font-size: 0.78rem; font-family: inherit; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
+#cin-replay-btn:hover, #cin-home-end-btn:hover { background: rgba(200,152,58,0.1); border-color: rgba(200,152,58,0.6); color: rgba(200,152,58,1); }
+#cin-home-end-btn { border-color: rgba(255,255,255,0.12); color: rgba(160,150,130,0.65); }
+#cin-home-end-btn:hover { border-color: rgba(200,152,58,0.4); color: rgba(200,152,58,0.9); background: rgba(200,152,58,0.08); }
 
 /* ── 選項區 ─── */
 #cin-choice-area {
@@ -356,7 +358,7 @@ const CSS = `
   line-height: 1.35;
 }
 
-/* ── 語音 & 氛圍音控制按鈕 ─── */
+/* ── 氛圍音控制按鈕 ─── */
 #cin-header { position: relative; }
 #cin-ctrl-btns {
   position: absolute; top: 50%; right: 1rem;
@@ -385,6 +387,29 @@ const CSS = `
   color: rgba(200,152,58,1);
   background: rgba(200,152,58,0.1);
   box-shadow: 0 0 8px rgba(200,152,58,0.18);
+}
+
+/* ── 首頁按鈕（左側場景面板）─── */
+#cin-home-btn {
+  position: absolute; top: 1rem; left: 1.1rem;
+  background: rgba(4,10,20,0.55);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  padding: 0.3rem 0.65rem;
+  color: rgba(155,145,125,0.5);
+  font-family: inherit;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.22s;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+#cin-home-btn:hover {
+  color: rgba(210,190,155,0.9);
+  border-color: rgba(200,152,58,0.4);
+  background: rgba(4,10,20,0.82);
 }
 `;
 
@@ -1625,11 +1650,12 @@ export class CinematicPlayer {
    *   scenes  — SCENES map（scene_id → scene object）
    *   startId — 起始 scene id
    */
-  constructor(root, { scenes, startId, dashMeta = null }) {
+  constructor(root, { scenes, startId, dashMeta = null, onHome = null }) {
     this._root     = root;
     this._scenes   = scenes;
     this._startId  = startId;
-    this._dashMeta = dashMeta;   // dashboard 指標設定（null = 不顯示 HUD）
+    this._dashMeta = dashMeta;
+    this._onHome   = onHome;   // dashboard 指標設定（null = 不顯示 HUD）
     this._sceneId = startId;   // 當前 scene id
     this._bi      = 0;         // 當前 beat index
     this._timer   = null;
@@ -1665,6 +1691,7 @@ export class CinematicPlayer {
       <div id="cin-stage">
         <div id="cin-scene-panel">
           <div id="cin-scene-art"></div>
+          <button id="cin-home-btn">← 首頁</button>
           <div class="scene-label-overlay" id="cin-scene-label"></div>
           <div id="cin-dashboard">
             <div class="dash-item">
@@ -1686,7 +1713,6 @@ export class CinematicPlayer {
             <div id="cin-scene-num"></div>
             <div id="cin-scene-title"></div>
             <div id="cin-ctrl-btns">
-              <button class="cin-ctrl-btn" id="cin-voice-btn"   title="語音朗讀">🔇</button>
               <button class="cin-ctrl-btn" id="cin-ambient-btn" title="背景氛圍音">🔕</button>
             </div>
           </div>
@@ -1979,7 +2005,10 @@ export class CinematicPlayer {
         <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">${cfg.label}</span></div>
         ${choiceRows}
         <div>${badge}</div>
-        <button id="cin-replay-btn">重新選擇</button>
+        <div style="display:flex;gap:0.6rem;justify-content:center;margin-top:1.5rem">
+          <button id="cin-replay-btn">重新選擇</button>
+          <button id="cin-home-end-btn">← 回首頁</button>
+        </div>
       </div>`;
 
     stage.appendChild(overlay);
@@ -1994,6 +2023,16 @@ export class CinematicPlayer {
       this._bindControls();
       this._enterScene(this._startId);
     });
+
+    const homeEndBtn = document.getElementById('cin-home-end-btn');
+    if (homeEndBtn && this._onHome) {
+      homeEndBtn.addEventListener('click', () => {
+        this._stopSpeech();
+        this._ambient.setMood(null);
+        this._root.innerHTML = '';
+        this._onHome();
+      });
+    }
   }
 
   // ── 語音初始化（Web Speech API）────────────────────────────
@@ -2028,28 +2067,26 @@ export class CinematicPlayer {
 
   // ── 控制按鈕綁定（start + replay 都需要）──────────────────
   _bindControls() {
-    const vBtn = document.getElementById('cin-voice-btn');
+    // 氛圍音
     const aBtn = document.getElementById('cin-ambient-btn');
-
-    if (vBtn) {
-      // 還原視覺狀態
-      vBtn.classList.toggle('active', this._voiceOn);
-      vBtn.textContent = this._voiceOn ? '🔊' : '🔇';
-      vBtn.addEventListener('click', () => {
-        this._voiceOn = !this._voiceOn;
-        vBtn.classList.toggle('active', this._voiceOn);
-        vBtn.textContent = this._voiceOn ? '🔊' : '🔇';
-        if (!this._voiceOn) this._stopSpeech();
-      });
-    }
-
     if (aBtn) {
-      // 還原視覺狀態（ambient 物件跨 replay 存活）
       aBtn.classList.toggle('active', this._ambient._on);
       aBtn.textContent = this._ambient._on ? '🎵' : '🔕';
       aBtn.addEventListener('click', () => {
         this._ambient.toggle(aBtn);
         aBtn.textContent = this._ambient._on ? '🎵' : '🔕';
+      });
+    }
+
+    // 首頁
+    const hBtn = document.getElementById('cin-home-btn');
+    if (hBtn && this._onHome) {
+      hBtn.addEventListener('click', () => {
+        this._stopSpeech();
+        this._ambient.setMood(null);
+        if (this._timer) clearTimeout(this._timer);
+        this._root.innerHTML = '';
+        this._onHome();
       });
     }
   }
