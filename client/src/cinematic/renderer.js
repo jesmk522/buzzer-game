@@ -920,19 +920,19 @@ export class CinematicPlayer {
     overlay.id = 'cin-ending-overlay';
     overlay.innerHTML = `
       <div class="cin-ending-card">
-        <h2>📦 Evidence Pack</h2>
-        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">full_solve</span></div>
+        <h2>📊 偵探紀錄</h2>
+        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">完整破案</span></div>
         <div class="cin-ep-row"><span class="cin-ep-key">線索收集</span><span class="cin-ep-val">📋 當鋪收據 · 🏦 電匯紀錄</span></div>
         <div class="cin-ep-row">
           <span class="cin-ep-key">行為標籤</span>
           <span class="cin-ep-val">
-            <span class="cin-ep-tag">evidence_seeking</span>
-            <span class="cin-ep-tag">deductive_reasoning</span>
-            <span class="cin-ep-tag">fraud_recognition</span>
+            <span class="cin-ep-tag">主動蒐集</span>
+            <span class="cin-ep-tag">推理判斷</span>
+            <span class="cin-ep-tag">識破詐騙</span>
           </span>
         </div>
         <div class="cin-ep-row"><span class="cin-ep-key">追回金額</span><span class="cin-ep-val">NT$620,000</span></div>
-        <div><span class="cin-ep-badge">✓ Chapter 0 完成</span></div>
+        <div><span class="cin-ep-badge">✓ 第零章 完成</span></div>
         <button id="cin-replay-btn">重新播放</button>
       </div>`;
     stage.appendChild(overlay);

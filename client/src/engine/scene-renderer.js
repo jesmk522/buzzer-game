@@ -117,12 +117,12 @@ export class SceneRenderer {
     const summary = document.createElement('div');
     summary.className = 'ending-summary';
     summary.innerHTML = `
-      <h2>📦 Evidence Pack 已產出</h2>
+      <h2>📦 偵探報告已產出</h2>
       <p>結局：<strong>${pack.ending || 'unknown'}</strong></p>
       <p>收集線索：${pack.outcomes.clues_total} 個（決定性：${pack.outcomes.decisive_clues_found}）</p>
       <p>推理步驟：${pack.reasoning_trace.length}</p>
       <p>行為標籤：${pack.evidence_tags.join('、')}</p>
-      <button id="download-pack">下載我的 Evidence Pack</button>
+      <button id="download-pack">下載偵探報告</button>
     `;
     this.paragraphsEl.appendChild(summary);
     summary.querySelector('#download-pack').addEventListener('click', () => {
@@ -130,7 +130,7 @@ export class SceneRenderer {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `evidence-pack-${pack.session_id}.json`;
+      a.download = `detective-report-${pack.session_id}.json`;
       a.click();
       URL.revokeObjectURL(url);
     });

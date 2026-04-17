@@ -94,7 +94,7 @@ export const CINEMATIC_SCRIPT = [
       { type: 'narrate',  text: '他沒吃飯、沒睡覺，手上還捏著已經發不出訊息的電話。',                                    ms: 5000 },
       { type: 'narrate',  text: '陳秀蘭衝上去抱住他，一句話都說不出來。',                                               ms: 4500 },
       { type: 'dialogue', speaker: '阿公', text: '「我對不起妳……我以為那真的是小寶。」',                                 ms: 5500 },
-      { type: 'epilogue', text: '〔警方備註〕本案提交 Evidence Pack 到 165 詐騙資料庫，供後續案例比對。匯出帳戶已凍結，追回 NT$620,000。', ms: 7500 },
+      { type: 'epilogue', text: '〔警方備註〕本案資料已提交 165 詐騙通報系統，供後續案例比對。匯出帳戶已凍結，追回 NT$620,000。', ms: 7500 },
     ],
   },
 ];
