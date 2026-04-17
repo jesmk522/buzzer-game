@@ -1339,6 +1339,84 @@ const SCENE_ART = {
   <rect x="0" y="420" width="800" height="120" fill="#060c14"/>
 </svg>`,
 
+  // ── 會議室（經濟學家 / 客戶會議）────────────────────────
+  meeting: `<svg viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="meetBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#111a26"/>
+      <stop offset="100%" stop-color="#090e18"/>
+    </linearGradient>
+    <linearGradient id="tableGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3040"/>
+      <stop offset="100%" stop-color="#0e1c2c"/>
+    </linearGradient>
+    <filter id="meetGlow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="800" height="540" fill="url(#meetBg)"/>
+  <!-- 窗（右牆）-->
+  <rect x="550" y="40" width="210" height="280" rx="3" fill="#0a1420"/>
+  <!-- 城市夜景 -->
+  <rect x="556" y="46" width="198" height="268" fill="#060d18"/>
+  <rect x="562" y="220" width="180" height="88" fill="#060d18"/>
+  <!-- 燈光點 -->
+  <rect x="566" y="190" width="5" height="3" fill="#f5d77e" opacity=".8"/>
+  <rect x="578" y="180" width="4" height="4" fill="#a3c4f5" opacity=".6"/>
+  <rect x="592" y="195" width="5" height="3" fill="#f5d77e" opacity=".7"/>
+  <rect x="610" y="185" width="4" height="5" fill="#f5d77e" opacity=".9"/>
+  <rect x="626" y="200" width="6" height="3" fill="#a3c4f5" opacity=".7"/>
+  <rect x="644" y="188" width="4" height="4" fill="#f5d77e" opacity=".8"/>
+  <rect x="660" y="196" width="5" height="3" fill="#f5d77e" opacity=".6"/>
+  <rect x="676" y="182" width="4" height="5" fill="#a3c4f5" opacity=".8"/>
+  <rect x="692" y="200" width="5" height="3" fill="#f5d77e" opacity=".7"/>
+  <rect x="710" y="190" width="4" height="4" fill="#f5d77e" opacity=".9"/>
+  <rect x="724" y="210" width="6" height="3" fill="#a3c4f5" opacity=".5"/>
+  <rect x="566" y="240" width="5" height="3" fill="#f5d77e" opacity=".5"/>
+  <rect x="590" y="252" width="4" height="4" fill="#f5d77e" opacity=".6"/>
+  <rect x="620" y="245" width="5" height="3" fill="#a3c4f5" opacity=".5"/>
+  <rect x="655" y="255" width="4" height="4" fill="#f5d77e" opacity=".7"/>
+  <rect x="690" y="242" width="5" height="3" fill="#f5d77e" opacity=".6"/>
+  <!-- 投影幕 -->
+  <rect x="60" y="30" width="420" height="240" rx="4" fill="#0c1520"/>
+  <rect x="64" y="34" width="412" height="232" rx="2" fill="#0e1e30"/>
+  <!-- 投影畫面（折線圖）-->
+  <polyline points="80,220 130,210 180,200 230,188 280,170 330,155 380,138 430,128 460,118" stroke="#3a7fc0" stroke-width="2" fill="none" opacity=".7"/>
+  <text x="270" y="58" text-anchor="middle" font-size="10" fill="#4a7fa0" font-family="monospace" opacity=".8">QUARTERLY OUTLOOK · CONFIDENTIAL</text>
+  <text x="270" y="78" text-anchor="middle" font-size="8" fill="#4a7fa0" font-family="monospace" opacity=".5">Q3 2007 REVIEW</text>
+  <!-- 橫格線 -->
+  <line x1="80" y1="120" x2="462" y2="120" stroke="#1e3a52" stroke-width="0.8" stroke-dasharray="4,4"/>
+  <line x1="80" y1="160" x2="462" y2="160" stroke="#1e3a52" stroke-width="0.8" stroke-dasharray="4,4"/>
+  <line x1="80" y1="200" x2="462" y2="200" stroke="#1e3a52" stroke-width="0.8" stroke-dasharray="4,4"/>
+  <!-- 投影機光束 -->
+  <polygon points="270,0 80,34 462,34" fill="#1a3a60" opacity=".06"/>
+  <!-- 長型會議桌 -->
+  <ellipse cx="400" cy="390" rx="330" ry="60" fill="url(#tableGrad)" opacity=".95"/>
+  <ellipse cx="400" cy="382" rx="326" ry="56" fill="#1a2e44" opacity=".6"/>
+  <!-- 桌面反光 -->
+  <ellipse cx="400" cy="375" rx="200" ry="20" fill="#2a4a6a" opacity=".15"/>
+  <!-- 椅子 + 人物輪廓（左側） -->
+  <ellipse cx="140" cy="345" rx="16" ry="17" fill="#0e1a28"/>
+  <rect x="124" y="360" width="32" height="45" rx="5" fill="#0e1a28"/>
+  <!-- 椅子 + 人物輪廓（中左）-->
+  <ellipse cx="250" cy="342" rx="16" ry="17" fill="#0e1a28"/>
+  <rect x="234" y="357" width="32" height="45" rx="5" fill="#0e1a28"/>
+  <!-- 椅子 + 人物輪廓（中）— 主講者 -->
+  <ellipse cx="400" cy="338" rx="18" ry="19" fill="#122236"/>
+  <rect x="382" y="355" width="36" height="50" rx="5" fill="#122236"/>
+  <!-- 椅子 + 人物輪廓（中右）-->
+  <ellipse cx="550" cy="342" rx="16" ry="17" fill="#0e1a28"/>
+  <rect x="534" y="357" width="32" height="45" rx="5" fill="#0e1a28"/>
+  <!-- 椅子 + 人物輪廓（右側）-->
+  <ellipse cx="660" cy="345" rx="16" ry="17" fill="#0e1a28"/>
+  <rect x="644" y="360" width="32" height="45" rx="5" fill="#0e1a28"/>
+  <!-- 桌上物品 -->
+  <rect x="175" y="383" width="50" height="30" rx="2" fill="#0a1420" transform="rotate(-3 175 383)"/>
+  <rect x="345" y="378" width="40" height="25" rx="2" fill="#0a1420"/>
+  <ellipse cx="480" cy="394" rx="10" ry="13" fill="#142030"/>
+  <!-- 地板陰影 -->
+  <rect x="0" y="460" width="800" height="80" fill="#060c16"/>
+  <ellipse cx="400" cy="460" rx="300" ry="20" fill="#040a12" opacity=".6"/>
+</svg>`,
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
