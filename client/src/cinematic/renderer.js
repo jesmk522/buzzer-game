@@ -355,6 +355,37 @@ const CSS = `
   white-space: normal;
   line-height: 1.35;
 }
+
+/* ── 語音 & 氛圍音控制按鈕 ─── */
+#cin-header { position: relative; }
+#cin-ctrl-btns {
+  position: absolute; top: 50%; right: 1rem;
+  transform: translateY(-50%);
+  display: flex; gap: 0.38rem; align-items: center;
+}
+.cin-ctrl-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  width: 2rem; height: 2rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.88rem;
+  color: rgba(155,145,125,0.4);
+  transition: all 0.2s;
+  padding: 0; line-height: 1;
+  flex-shrink: 0;
+}
+.cin-ctrl-btn:hover {
+  border-color: rgba(200,152,58,0.4);
+  color: rgba(200,152,58,0.85);
+  background: rgba(200,152,58,0.08);
+}
+.cin-ctrl-btn.active {
+  border-color: rgba(200,152,58,0.55);
+  color: rgba(200,152,58,1);
+  background: rgba(200,152,58,0.1);
+  box-shadow: 0 0 8px rgba(200,152,58,0.18);
+}
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1429,6 +1460,162 @@ const SCENE_ART = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 場景氛圍 Mood 對照
+// ─────────────────────────────────────────────────────────────────────────────
+const SCENE_MOODS = {
+  dawn:        'calm',
+  diary:       'calm',
+  shop:        'calm',
+  pawn:        'tense',
+  bank:        'tense',
+  bank_lite:   'tense',
+  police_full: 'crisis',
+  police_lite: 'crisis',
+  reunion:     'warm',
+  office:      'dark',
+  data:        'dark',
+  newsroom:    'dark',
+  crisis:      'crisis',
+  aftermath:   'tense',
+  meeting:     'tense',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AmbientAudio — Web Audio API 程式生成氛圍音
+// ─────────────────────────────────────────────────────────────────────────────
+class AmbientAudio {
+  constructor() {
+    this._ctx    = null;
+    this._master = null;
+    this._nodes  = [];
+    this._mood   = null;
+    this._on     = false;
+  }
+
+  _getCtx() {
+    if (!this._ctx) {
+      this._ctx    = new (window.AudioContext || window.webkitAudioContext)();
+      this._master = this._ctx.createGain();
+      this._master.gain.value = 0;
+      this._master.connect(this._ctx.destination);
+    }
+    if (this._ctx.state === 'suspended') this._ctx.resume();
+    return this._ctx;
+  }
+
+  toggle(btn) {
+    this._on = !this._on;
+    btn.classList.toggle('active', this._on);
+    if (this._on) {
+      const ctx = this._getCtx();
+      this._master.gain.cancelScheduledValues(ctx.currentTime);
+      this._master.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 1.8);
+      if (this._mood) this._build(this._mood);
+    } else {
+      if (!this._ctx) return;
+      const t = this._ctx.currentTime;
+      this._master.gain.cancelScheduledValues(t);
+      this._master.gain.linearRampToValueAtTime(0, t + 0.9);
+      setTimeout(() => this._stop(), 1000);
+    }
+  }
+
+  setMood(mood) {
+    if (mood === this._mood) return;
+    this._mood = mood;
+    if (!this._on || !this._ctx) return;
+    const ctx = this._ctx;
+    const t = ctx.currentTime;
+    this._master.gain.cancelScheduledValues(t);
+    this._master.gain.linearRampToValueAtTime(0, t + 0.7);
+    setTimeout(() => {
+      if (!this._on) return;
+      this._stop();
+      this._build(mood);
+      const t2 = this._ctx.currentTime;
+      this._master.gain.cancelScheduledValues(t2);
+      this._master.gain.linearRampToValueAtTime(0.18, t2 + 1.2);
+    }, 800);
+  }
+
+  _stop() {
+    this._nodes.forEach(n => { try { n.stop(); } catch (e) {} });
+    this._nodes = [];
+  }
+
+  _sine(ctx, freq, gain, detune = 0) {
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.type            = 'sine';
+    osc.frequency.value = freq;
+    osc.detune.value    = detune;
+    g.gain.value        = gain;
+    osc.connect(g);
+    g.connect(this._master);
+    osc.start();
+    this._nodes.push(osc);
+  }
+
+  _noise(ctx, gain, centerFreq) {
+    const len = ctx.sampleRate * 3;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d   = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop   = true;
+    const f = ctx.createBiquadFilter();
+    f.type            = 'bandpass';
+    f.frequency.value = centerFreq;
+    f.Q.value         = 0.4;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(f); f.connect(g); g.connect(this._master);
+    src.start();
+    this._nodes.push(src);
+  }
+
+  _build(mood) {
+    const ctx = this._getCtx();
+    switch (mood) {
+      case 'calm':
+        this._sine(ctx, 110,   0.38);       // A2 根音
+        this._sine(ctx, 165,   0.18);       // E3 五度
+        this._sine(ctx, 220,   0.10);       // A3 八度
+        this._noise(ctx, 0.018, 90);
+        break;
+      case 'dark':
+        this._sine(ctx, 55,    0.35);       // A1 深沉
+        this._sine(ctx, 82.4,  0.15);       // E2
+        this._sine(ctx, 110,   0.12, -8);   // A2 微失諧
+        this._noise(ctx, 0.025, 65);
+        break;
+      case 'tense':
+        this._sine(ctx, 110,   0.32);
+        this._sine(ctx, 155.6, 0.18);       // Eb3 三全音
+        this._sine(ctx, 233.1, 0.10);       // Bb3
+        this._noise(ctx, 0.030, 130);
+        break;
+      case 'crisis':
+        this._sine(ctx, 110,   0.30);
+        this._sine(ctx, 116.5, 0.20);       // Bb2 半音衝突
+        this._sine(ctx, 164.8, 0.12, 18);   // E3 微失諧
+        this._noise(ctx, 0.050, 180);
+        break;
+      case 'warm':
+        this._sine(ctx, 110,   0.32);       // A2
+        this._sine(ctx, 138.6, 0.18);       // C#3 大三度
+        this._sine(ctx, 165,   0.15);       // E3 五度
+        this._sine(ctx, 220,   0.10);       // A3
+        break;
+      default:
+        this._sine(ctx, 110,   0.25);
+        break;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CinematicPlayer
 // ─────────────────────────────────────────────────────────────────────────────
 export class CinematicPlayer {
@@ -1449,12 +1636,19 @@ export class CinematicPlayer {
     this._sceneNum = 0;        // 累計場景數（用於標題）
     this._choicesMade = [];    // 記錄用戶選擇（供結局面板顯示）
     this._lastDash    = null;  // dashboard 前一個數值（用於動畫 diff）
+    // 語音 & 氛圍音
+    this._voiceOn  = false;
+    this._synth    = null;
+    this._zhVoice  = null;
+    this._ambient  = new AmbientAudio();
   }
 
   // ── 初始化 ──────────────────────────────────────────────
   start() {
     this._injectCSS();
     this._buildLayout();
+    this._initVoice();
+    this._bindControls();
     this._enterScene(this._startId);
   }
 
@@ -1491,6 +1685,10 @@ export class CinematicPlayer {
           <div id="cin-header">
             <div id="cin-scene-num"></div>
             <div id="cin-scene-title"></div>
+            <div id="cin-ctrl-btns">
+              <button class="cin-ctrl-btn" id="cin-voice-btn"   title="語音朗讀">🔇</button>
+              <button class="cin-ctrl-btn" id="cin-ambient-btn" title="背景氛圍音">🔕</button>
+            </div>
           </div>
           <div id="cin-beats"></div>
           <div id="cin-choice-area" class="hidden"></div>
@@ -1503,6 +1701,7 @@ export class CinematicPlayer {
 
   // ── 場景進入（設定 SVG、標題、清旁白，開始跑 beats）──────
   _enterScene(sceneId) {
+    this._stopSpeech();
     this._sceneId = sceneId;
     this._bi = 0;
     this._sceneNum++;
@@ -1519,6 +1718,7 @@ export class CinematicPlayer {
     art.innerHTML   = SCENE_ART[scene.sceneKey] || '';
     art.dataset.scene = scene.sceneKey;
     art.dataset.beat  = '0';
+    this._ambient.setMood(SCENE_MOODS[scene.sceneKey] || 'calm');
     label.textContent = scene.title;
     num.textContent   = scene.title.match(/^第.+?場/)?.[0] ?? `第 ${this._sceneNum} 場`;
     title.textContent = scene.title.replace(/^第.+?· /, '');
@@ -1652,6 +1852,7 @@ export class CinematicPlayer {
     if (art) art.dataset.beat = String(this._bi);
 
     this._typewriter(el.querySelector('.cin-text'), beat.text, beat.ms);
+    this._speakText(beat.text, beat.type);
   }
 
   _appendClue(clue) {
@@ -1738,6 +1939,8 @@ export class CinematicPlayer {
 
   // ── 結局蓋板（全動態，依 scene.outcome + scene.outcomeLabel 渲染）────
   _showEnding(outcome = 'good') {
+    this._stopSpeech();
+    this._ambient.setMood('warm');
     // outcome → 顯示設定
     const OUTCOME_MAP = {
       good:         { label: '完整破案',    positive: true  },
@@ -1788,7 +1991,66 @@ export class CinematicPlayer {
       this._sceneNum    = 0;
       this._choicesMade = [];
       this._buildLayout();
+      this._bindControls();
       this._enterScene(this._startId);
     });
+  }
+
+  // ── 語音初始化（Web Speech API）────────────────────────────
+  _initVoice() {
+    this._synth   = window.speechSynthesis || null;
+    this._zhVoice = null;
+    if (!this._synth) return;
+    const load = () => {
+      const voices   = this._synth.getVoices();
+      this._zhVoice  = voices.find(v => v.lang === 'zh-TW')
+                    || voices.find(v => v.lang.startsWith('zh'))
+                    || null;
+    };
+    load();
+    this._synth.addEventListener('voiceschanged', load);
+  }
+
+  _speakText(text, type = 'narrate') {
+    if (!this._voiceOn || !this._synth) return;
+    this._synth.cancel();
+    const utt  = new SpeechSynthesisUtterance(text);
+    utt.lang   = 'zh-TW';
+    utt.rate   = type === 'dialogue' ? 0.95 : 0.85;
+    utt.pitch  = 1.0;
+    if (this._zhVoice) utt.voice = this._zhVoice;
+    this._synth.speak(utt);
+  }
+
+  _stopSpeech() {
+    if (this._synth) this._synth.cancel();
+  }
+
+  // ── 控制按鈕綁定（start + replay 都需要）──────────────────
+  _bindControls() {
+    const vBtn = document.getElementById('cin-voice-btn');
+    const aBtn = document.getElementById('cin-ambient-btn');
+
+    if (vBtn) {
+      // 還原視覺狀態
+      vBtn.classList.toggle('active', this._voiceOn);
+      vBtn.textContent = this._voiceOn ? '🔊' : '🔇';
+      vBtn.addEventListener('click', () => {
+        this._voiceOn = !this._voiceOn;
+        vBtn.classList.toggle('active', this._voiceOn);
+        vBtn.textContent = this._voiceOn ? '🔊' : '🔇';
+        if (!this._voiceOn) this._stopSpeech();
+      });
+    }
+
+    if (aBtn) {
+      // 還原視覺狀態（ambient 物件跨 replay 存活）
+      aBtn.classList.toggle('active', this._ambient._on);
+      aBtn.textContent = this._ambient._on ? '🎵' : '🔕';
+      aBtn.addEventListener('click', () => {
+        this._ambient.toggle(aBtn);
+        aBtn.textContent = this._ambient._on ? '🎵' : '🔕';
+      });
+    }
   }
 }
