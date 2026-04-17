@@ -1240,7 +1240,7 @@ export class CinematicPlayer {
 
   // ── Typewriter ────────────────────────────────────────────
   _typewriter(el, text, totalMs) {
-    const typingMs = Math.min(totalMs * 0.62, text.length * 38, 5200);
+    const typingMs = Math.min(totalMs * 0.55, text.length * 18, 2400);
     const perChar  = Math.max(typingMs / text.length, 12);
     let i = 0;
     const tick = setInterval(() => {
