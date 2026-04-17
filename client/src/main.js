@@ -20,9 +20,9 @@ import { DETECTIVE_C1_SCENES,    DETECTIVE_C1_START }                        fro
 import { DETECTIVE_C2_SCENES,    DETECTIVE_C2_START }                        from './cinematic/detective-c2-script.js';
 
 // 經濟學家系列
-import { ECONOMIST_SCENES    as ECO_C0, ECONOMIST_SCENE_START  as ECO_C0_START } from './cinematic/economist-script.js';
-import { ECONOMIST_C1_SCENES,           ECONOMIST_C1_START }                      from './cinematic/economist-c1-script.js';
-import { ECONOMIST_C2_SCENES,           ECONOMIST_C2_START }                      from './cinematic/economist-c2-script.js';
+import { ECONOMIST_SCENES    as ECO_C0, ECONOMIST_SCENE_START    as ECO_C0_START, ECONOMIST_DASHBOARD_META    as ECO_C0_META } from './cinematic/economist-script.js';
+import { ECONOMIST_C1_SCENES,           ECONOMIST_C1_START,                       ECONOMIST_C1_DASHBOARD_META as ECO_C1_META } from './cinematic/economist-c1-script.js';
+import { ECONOMIST_C2_SCENES,           ECONOMIST_C2_START,                       ECONOMIST_C2_DASHBOARD_META as ECO_C2_META } from './cinematic/economist-c2-script.js';
 
 // ── 模組清單 ─────────────────────────────────────────────────
 const MODULES = {
@@ -54,28 +54,31 @@ const MODULES = {
   ],
   economist: [
     {
-      id:    'eco_c0',
-      title: '信號 · 2007',
-      sub:   'Chapter 0',
-      tag:   '次貸危機 · 早期預警',
-      scenes: ECO_C0,
-      start:  ECO_C0_START,
+      id:       'eco_c0',
+      title:    '信號 · 2007',
+      sub:      'Chapter 0',
+      tag:      '次貸危機 · 早期預警',
+      scenes:   ECO_C0,
+      start:    ECO_C0_START,
+      dashMeta: ECO_C0_META,
     },
     {
-      id:    'eco_c1',
-      title: '泰銖的骨牌',
-      sub:   'Chapter 1',
-      tag:   '1997 亞洲金融風暴 · 傳染效應',
-      scenes: ECONOMIST_C1_SCENES,
-      start:  ECONOMIST_C1_START,
+      id:       'eco_c1',
+      title:    '泰銖的骨牌',
+      sub:      'Chapter 1',
+      tag:      '1997 亞洲金融風暴 · 傳染效應',
+      scenes:   ECONOMIST_C1_SCENES,
+      start:    ECONOMIST_C1_START,
+      dashMeta: ECO_C1_META,
     },
     {
-      id:    'eco_c2',
-      title: '黑天鵝的重量',
-      sub:   'Chapter 2',
-      tag:   'COVID-19 2020 · 不確定下的判斷',
-      scenes: ECONOMIST_C2_SCENES,
-      start:  ECONOMIST_C2_START,
+      id:       'eco_c2',
+      title:    '黑天鵝的重量',
+      sub:      'Chapter 2',
+      tag:      'COVID-19 2020 · 不確定下的判斷',
+      scenes:   ECONOMIST_C2_SCENES,
+      start:    ECONOMIST_C2_START,
+      dashMeta: ECO_C2_META,
     },
   ],
 };
@@ -125,7 +128,7 @@ function showSelector() {
       const mod = [...MODULES.detective, ...MODULES.economist].find(m => m.id === id);
       if (!mod) return;
       root.innerHTML = '';
-      new CinematicPlayer(root, { scenes: mod.scenes, startId: mod.start }).start();
+      new CinematicPlayer(root, { scenes: mod.scenes, startId: mod.start, dashMeta: mod.dashMeta || null }).start();
     });
   });
 }

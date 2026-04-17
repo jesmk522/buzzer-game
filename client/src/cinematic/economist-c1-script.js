@@ -22,6 +22,12 @@
 
 export const ECONOMIST_C1_START = 'ec1_intro';
 
+export const ECONOMIST_C1_DASHBOARD_META = {
+  twd:   { label: '台幣匯率',     fmt: v => v.toFixed(1),                      higherIsBad: true  },
+  taiex: { label: '台股加權',     fmt: v => Math.round(v).toLocaleString(),     higherIsBad: false },
+  fx:    { label: '外匯存底(億)', fmt: v => Math.round(v).toString(),           higherIsBad: false },
+};
+
 export const ECONOMIST_C1_SCENES = {
 
   ec1_intro: {

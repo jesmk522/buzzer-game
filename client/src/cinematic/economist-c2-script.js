@@ -23,6 +23,12 @@
 
 export const ECONOMIST_C2_START = 'ec2_intro';
 
+export const ECONOMIST_C2_DASHBOARD_META = {
+  sp500:  { label: 'S&P 500',    fmt: v => Math.round(v).toLocaleString(),  higherIsBad: false },
+  vix:    { label: 'VIX',        fmt: v => v.toFixed(1),                    higherIsBad: true  },
+  tnote:  { label: '10Y 美債(%)', fmt: v => v.toFixed(2) + '%',             higherIsBad: false },
+};
+
 export const ECONOMIST_C2_SCENES = {
 
   ec2_intro: {

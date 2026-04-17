@@ -9,6 +9,12 @@
 
 export const ECONOMIST_SCENE_START = 'onboard';
 
+export const ECONOMIST_DASHBOARD_META = {
+  hpi:     { label: '房價指數',    fmt: v => v.toFixed(1),             higherIsBad: false },
+  default: { label: '次貸違約率',  fmt: v => v.toFixed(1) + '%',       higherIsBad: true  },
+  vix:     { label: 'VIX 恐慌指數', fmt: v => v.toFixed(1),            higherIsBad: true  },
+};
+
 export const ECONOMIST_SCENES = {
 
   // ── 開場：入職第一天 ──────────────────────────────────────

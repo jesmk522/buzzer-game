@@ -346,6 +346,15 @@ const CSS = `
 .dash-value.down { color: #2ecc71; }
 .dash-value.neutral { color: rgba(200,180,140,0.75); }
 .dash-arrow { font-size: 0.7rem; opacity: 0.7; }
+
+/* ── 結局選擇路徑 ─── */
+.cin-ep-choice {
+  font-size: 0.78rem !important;
+  color: rgba(180,160,120,0.7) !important;
+  font-style: italic;
+  white-space: normal;
+  line-height: 1.35;
+}
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1429,10 +1438,11 @@ export class CinematicPlayer {
    *   scenes  — SCENES map（scene_id → scene object）
    *   startId — 起始 scene id
    */
-  constructor(root, { scenes, startId }) {
-    this._root    = root;
-    this._scenes  = scenes;
-    this._startId = startId;
+  constructor(root, { scenes, startId, dashMeta = null }) {
+    this._root     = root;
+    this._scenes   = scenes;
+    this._startId  = startId;
+    this._dashMeta = dashMeta;   // dashboard 指標設定（null = 不顯示 HUD）
     this._sceneId = startId;   // 當前 scene id
     this._bi      = 0;         // 當前 beat index
     this._timer   = null;
@@ -1674,37 +1684,50 @@ export class CinematicPlayer {
     const hud = document.getElementById('cin-dashboard');
     if (!hud) return;
 
-    if (!dash) { hud.classList.remove('visible'); return; }
+    if (!dash || !this._dashMeta) { hud.classList.remove('visible'); return; }
     hud.classList.add('visible');
 
     const prev = this._lastDash || {};
     this._lastDash = dash;
 
-    const animate = (elId, newVal, oldVal, fmt, higherIsBad) => {
-      const el = document.getElementById(elId);
+    // 若 key 組合改變（跨章節），重建 HUD 結構
+    const keys = Object.keys(dash);
+    const existingKeys = [...hud.querySelectorAll('.dash-item')].map(el => el.dataset.key);
+    if (JSON.stringify(keys) !== JSON.stringify(existingKeys)) {
+      hud.innerHTML = keys.map(k => {
+        const meta = this._dashMeta[k] || { label: k };
+        return `<div class="dash-item" data-key="${k}">
+          <span class="dash-label">${meta.label}</span>
+          <span class="dash-value neutral" id="dash-${k}">—</span>
+        </div>`;
+      }).join('');
+    }
+
+    // 動畫更新各數值
+    keys.forEach(k => {
+      const meta = this._dashMeta[k] || { label: k, fmt: v => v.toFixed(1), higherIsBad: false };
+      const newVal = dash[k];
+      const oldVal = prev[k];
+      const el = document.getElementById(`dash-${k}`);
       if (!el) return;
+
       const start = oldVal ?? newVal;
       const duration = 900;
-      const startTime = performance.now();
+      const t0 = performance.now();
       const tick = (now) => {
-        const t = Math.min((now - startTime) / duration, 1);
-        const eased = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-        const cur = start + (newVal - start) * eased;
-        el.textContent = fmt(cur);
+        const t = Math.min((now - t0) / duration, 1);
+        const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+        el.textContent = meta.fmt(start + (newVal - start) * e);
         if (t < 1) requestAnimationFrame(tick);
-        else el.textContent = fmt(newVal);
+        else el.textContent = meta.fmt(newVal);
       };
       requestAnimationFrame(tick);
-      // 顏色方向
+
       if (oldVal !== undefined && Math.abs(newVal - oldVal) > 0.05) {
         const wentUp = newVal > oldVal;
-        el.className = `dash-value ${(wentUp === higherIsBad) ? 'up' : 'down'}`;
+        el.className = `dash-value ${(wentUp === meta.higherIsBad) ? 'up' : 'down'}`;
       }
-    };
-
-    animate('dash-hpi',     dash.hpi,     prev.hpi,     v => v.toFixed(1),        false);
-    animate('dash-default', dash.default, prev.default, v => v.toFixed(1) + '%',   true);
-    animate('dash-vix',     dash.vix,     prev.vix,     v => v.toFixed(1),         true);
+    });
   }
 
   // ── 進度條（本場 beats 進度） ────────────────────────────
@@ -1713,30 +1736,45 @@ export class CinematicPlayer {
     if (bar) bar.style.width = total > 0 ? `${(done / total) * 100}%` : '0%';
   }
 
-  // ── 結局蓋板 ──────────────────────────────────────────────
+  // ── 結局蓋板（全動態，依 scene.outcome + scene.outcomeLabel 渲染）────
   _showEnding(outcome = 'good') {
-    const isGood = outcome === 'good';
+    // outcome → 顯示設定
+    const OUTCOME_MAP = {
+      good:         { label: '完整破案',    positive: true  },
+      neutral:      { label: '遲來的線索',  positive: false },
+      prescient:    { label: '早期預警',    positive: true  },
+      reactive:     { label: '反應型決策',  positive: false },
+      contrarian:   { label: '反向思維',    positive: true  },
+      consensus:    { label: '共識跟隨',    positive: false },
+      early_signal: { label: '信號識別',    positive: true  },
+      late_pivot:   { label: '遲來調整',    positive: false },
+    };
+
+    const cfg      = OUTCOME_MAP[outcome] || { label: outcome, positive: false };
+    const isGood   = cfg.positive;
+    const scene    = this._scenes[this._sceneId] || {};
+    const chapter  = scene.title || '本章';
+
+    // 玩家選擇路徑
+    const choiceRows = this._choicesMade.length > 0
+      ? this._choicesMade.map((c, i) =>
+          `<div class="cin-ep-row"><span class="cin-ep-key">選擇 ${i + 1}</span><span class="cin-ep-val cin-ep-choice">${c}</span></div>`
+        ).join('')
+      : '';
+
+    const badge = isGood
+      ? `<span class="cin-ep-badge">✓ ${chapter}</span>`
+      : `<span class="cin-ep-badge" style="background:rgba(180,80,60,0.10);border-color:rgba(200,100,80,0.28);color:rgba(220,150,130,0.88);">◎ ${chapter}</span>`;
+
     const stage  = document.getElementById('cin-stage');
     const overlay = document.createElement('div');
     overlay.id = 'cin-ending-overlay';
 
-    const clues  = isGood ? '📋 當鋪收據 · 🏦 電匯紀錄' : '🏦 電匯紀錄';
-    const result = isGood ? '完整破案' : '遲來的線索';
-    const money  = isGood ? 'NT$620,000' : '追回 NT$0';
-    const badge  = isGood
-      ? '<span class="cin-ep-badge">✓ 第零章 完整通關</span>'
-      : '<span class="cin-ep-badge" style="background:rgba(180,80,60,0.12);border-color:rgba(200,100,80,0.3);color:rgba(220,150,130,0.9);">第零章 完成（普通結局）</span>';
-    const tags   = isGood
-      ? `<span class="cin-ep-tag">主動蒐集</span><span class="cin-ep-tag">推理判斷</span><span class="cin-ep-tag">識破詐騙</span>`
-      : `<span class="cin-ep-tag">蒐集線索</span><span class="cin-ep-tag">謹慎判斷</span>`;
-
     overlay.innerHTML = `
       <div class="cin-ending-card">
-        <h2>📊 偵探紀錄</h2>
-        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">${result}</span></div>
-        <div class="cin-ep-row"><span class="cin-ep-key">線索收集</span><span class="cin-ep-val">${clues}</span></div>
-        <div class="cin-ep-row"><span class="cin-ep-key">行為標籤</span><span class="cin-ep-val">${tags}</span></div>
-        <div class="cin-ep-row"><span class="cin-ep-key">追回金額</span><span class="cin-ep-val">${money}</span></div>
+        <h2>📊 行為紀錄</h2>
+        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">${cfg.label}</span></div>
+        ${choiceRows}
         <div>${badge}</div>
         <button id="cin-replay-btn">重新選擇</button>
       </div>`;
