@@ -1,8 +1,8 @@
 /**
- * CinematicPlayer — 動畫版播放器
+ * CinematicPlayer — 互動動畫播放器
  *
  * 版面：左側 62% 場景動畫（CSS + SVG）／右側 38% 旁白走字
- * 自動按 beat.ms 推進，typewriter 速度動態計算。
+ * 支援分支劇情：場景結束後若有 choice，底部滑出選項卡等用戶點選。
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,6 +193,66 @@ const CSS = `
 .cin-ep-badge { display: inline-block; margin-top: 1.2rem; padding: 0.35rem 1rem; background: rgba(60,150,80,0.14); border: 1px solid rgba(80,180,100,0.28); border-radius: 100px; color: rgba(120,200,130,0.9); font-size: 0.72rem; letter-spacing: 0.08em; }
 #cin-replay-btn { margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: transparent; border: 1px solid rgba(200,152,58,0.35); border-radius: 6px; color: rgba(200,152,58,0.8); font-size: 0.78rem; font-family: inherit; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
 #cin-replay-btn:hover { background: rgba(200,152,58,0.1); border-color: rgba(200,152,58,0.6); color: rgba(200,152,58,1); }
+
+/* ── 選項區 ─── */
+#cin-choice-area {
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  animation: choiceIn 0.5s ease forwards;
+}
+@keyframes choiceIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#cin-choice-area.hidden { display: none; }
+.cin-choice-prompt {
+  font-size: 0.6rem;
+  color: rgba(200,152,58,0.72);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.cin-choice-btn {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.45rem;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(228,222,208,0.88);
+  font-size: 0.82rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  line-height: 1.6;
+}
+.cin-choice-btn:hover {
+  background: rgba(200,152,58,0.1);
+  border-color: rgba(200,152,58,0.35);
+  color: rgba(245,238,222,0.96);
+}
+.cin-choice-btn.selected {
+  background: rgba(200,152,58,0.13);
+  border-color: rgba(200,152,58,0.55);
+  color: rgba(245,238,222,0.96);
+  pointer-events: none;
+}
+.cin-choice-btn.dimmed { opacity: 0.3; pointer-events: none; }
+.cin-choice-icon { font-size: 0.95rem; flex-shrink: 0; margin-top: 0.15rem; }
+.cin-chosen-record {
+  padding: 0.4rem 0.75rem;
+  background: rgba(200,152,58,0.06);
+  border-left: 2px solid rgba(200,152,58,0.38);
+  border-radius: 0 5px 5px 0;
+  font-size: 0.7rem;
+  color: rgba(200,152,58,0.68);
+  font-style: italic;
+  animation: beatIn 0.3s ease forwards;
+  opacity: 0;
+}
 
 /* ── SVG 動畫 ─── */
 @keyframes fogDrift  { 0%,100%{transform:translateX(0);opacity:.045} 50%{transform:translateX(28px);opacity:.08} }
@@ -775,21 +835,28 @@ const SCENE_ART = {
 // CinematicPlayer
 // ─────────────────────────────────────────────────────────────────────────────
 export class CinematicPlayer {
-  constructor(root, script) {
-    this._root   = root;
-    this._script = script;
-    this._si     = 0;   // scene index
-    this._bi     = 0;   // beat index
-    this._timer  = null;
-    this._totalBeats = script.reduce((s, sc) => s + sc.beats.length, 0);
-    this._doneBeat   = 0;
+  /**
+   * @param {HTMLElement} root
+   * @param {{ scenes: Object, startId: string }} config
+   *   scenes  — SCENES map（scene_id → scene object）
+   *   startId — 起始 scene id
+   */
+  constructor(root, { scenes, startId }) {
+    this._root    = root;
+    this._scenes  = scenes;
+    this._startId = startId;
+    this._sceneId = startId;   // 當前 scene id
+    this._bi      = 0;         // 當前 beat index
+    this._timer   = null;
+    this._sceneNum = 0;        // 累計場景數（用於標題）
+    this._choicesMade = [];    // 記錄用戶選擇（供結局面板顯示）
   }
 
   // ── 初始化 ──────────────────────────────────────────────
   start() {
     this._injectCSS();
     this._buildLayout();
-    this._playBeat();
+    this._enterScene(this._startId);
   }
 
   _injectCSS() {
@@ -813,6 +880,7 @@ export class CinematicPlayer {
             <div id="cin-scene-title"></div>
           </div>
           <div id="cin-beats"></div>
+          <div id="cin-choice-area" class="hidden"></div>
           <div id="cin-progress">
             <div id="cin-progress-fill"></div>
           </div>
@@ -820,46 +888,130 @@ export class CinematicPlayer {
       </div>`;
   }
 
-  // ── Beat 播放 ────────────────────────────────────────────
-  _playBeat() {
-    const scene = this._script[this._si];
+  // ── 場景進入（設定 SVG、標題、清旁白，開始跑 beats）──────
+  _enterScene(sceneId) {
+    this._sceneId = sceneId;
+    this._bi = 0;
+    this._sceneNum++;
+
+    const scene = this._scenes[sceneId];
     if (!scene) { this._showEnding(); return; }
 
-    // 第一 beat：切換場景
-    if (this._bi === 0) this._transitionScene(scene);
-
-    const beat = scene.beats[this._bi];
-    if (!beat) {
-      // 本場結束：顯示線索卡（如有），再進下一場
-      if (scene.clueUnlock) {
-        this._appendClue(scene.clueUnlock);
-        this._timer = setTimeout(() => { this._si++; this._bi = 0; this._playBeat(); }, 2800);
-      } else {
-        this._si++; this._bi = 0; this._playBeat();
-      }
-      return;
-    }
-
-    this._appendBeat(beat);
-    this._doneBeat++;
-    this._updateProgress();
-
-    this._timer = setTimeout(() => { this._bi++; this._playBeat(); }, beat.ms);
-  }
-
-  // ── 場景轉換 ─────────────────────────────────────────────
-  _transitionScene(scene) {
+    // 更新場景面板
     const art   = document.getElementById('cin-scene-art');
     const label = document.getElementById('cin-scene-label');
     const num   = document.getElementById('cin-scene-num');
     const title = document.getElementById('cin-scene-title');
 
-    art.innerHTML = SCENE_ART[scene.sceneKey] || '';
+    art.innerHTML   = SCENE_ART[scene.sceneKey] || '';
     label.textContent = scene.title;
-    num.textContent   = `第 ${this._si + 1} 場 · ${String(this._si + 1).padStart(2, '0')}`;
+    num.textContent   = scene.title.match(/^第.+?場/)?.[0] ?? `第 ${this._sceneNum} 場`;
     title.textContent = scene.title.replace(/^第.+?· /, '');
 
+    // 清旁白 + 隱藏選項區
     document.getElementById('cin-beats').innerHTML = '';
+    this._hideChoiceArea();
+
+    // 重設進度條（顯示本場進度）
+    this._updateProgress(0, scene.beats.length);
+
+    // 場景開始時若有線索，先顯示
+    if (scene.clueUnlock) {
+      this._appendClue(scene.clueUnlock);
+    }
+
+    this._playBeat();
+  }
+
+  // ── Beat 播放迴圈 ────────────────────────────────────────
+  _playBeat() {
+    const scene = this._scenes[this._sceneId];
+    if (!scene) { this._showEnding(); return; }
+
+    const beat = scene.beats[this._bi];
+
+    if (!beat) {
+      // 所有 beat 跑完：檢查下一步
+      this._onSceneEnd(scene);
+      return;
+    }
+
+    this._appendBeat(beat);
+    this._updateProgress(this._bi + 1, scene.beats.length);
+
+    this._timer = setTimeout(() => {
+      this._bi++;
+      this._playBeat();
+    }, beat.ms);
+  }
+
+  // ── 場景結束後的路由邏輯 ─────────────────────────────────
+  _onSceneEnd(scene) {
+    if (scene.choice) {
+      // 有選項：顯示選項卡，等用戶點選
+      this._showChoiceArea(scene.choice);
+    } else if (scene.next) {
+      // 自動推進
+      this._enterScene(scene.next);
+    } else {
+      // 沒有 next 也沒有 choice → 結局
+      this._showEnding(scene.outcome);
+    }
+  }
+
+  // ── 選項區 ───────────────────────────────────────────────
+  _showChoiceArea(choice) {
+    const area = document.getElementById('cin-choice-area');
+    area.classList.remove('hidden');
+
+    // 重新掛載（觸發 choiceIn 動畫）
+    area.innerHTML = `
+      <div class="cin-choice-prompt">${choice.prompt}</div>
+      ${choice.options.map((opt, i) => `
+        <button class="cin-choice-btn" data-idx="${i}" data-next="${opt.next}">
+          <span class="cin-choice-icon">${opt.icon}</span>
+          <span>${opt.label}</span>
+        </button>`).join('')}`;
+
+    // 綁定點擊
+    area.querySelectorAll('.cin-choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => this._onChoiceClick(btn, choice.options));
+    });
+  }
+
+  _onChoiceClick(btn, options) {
+    const idx  = Number(btn.dataset.idx);
+    const next = btn.dataset.next;
+    const opt  = options[idx];
+
+    // 視覺回饋：選中＋淡出其他
+    document.querySelectorAll('.cin-choice-btn').forEach(b => {
+      b.classList.add(b === btn ? 'selected' : 'dimmed');
+    });
+
+    // 記錄選擇
+    this._choicesMade.push(opt.label);
+
+    // 500ms 後：收起選項區，旁白追加「你選擇了…」，推進至下一場
+    setTimeout(() => {
+      this._hideChoiceArea();
+      this._appendChosen(opt);
+      setTimeout(() => this._enterScene(next), 600);
+    }, 500);
+  }
+
+  _hideChoiceArea() {
+    const area = document.getElementById('cin-choice-area');
+    if (area) { area.classList.add('hidden'); area.innerHTML = ''; }
+  }
+
+  _appendChosen(opt) {
+    const container = document.getElementById('cin-beats');
+    const el = document.createElement('div');
+    el.className = 'cin-chosen-record';
+    el.textContent = `你選擇了：${opt.label}`;
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
   }
 
   // ── 渲染單一 Beat ────────────────────────────────────────
@@ -877,8 +1029,7 @@ export class CinematicPlayer {
     container.appendChild(el);
     container.scrollTop = container.scrollHeight;
 
-    const textEl = el.querySelector('.cin-text');
-    this._typewriter(textEl, beat.text, beat.ms);
+    this._typewriter(el.querySelector('.cin-text'), beat.text, beat.ms);
   }
 
   _appendClue(clue) {
@@ -898,7 +1049,7 @@ export class CinematicPlayer {
   // ── Typewriter ────────────────────────────────────────────
   _typewriter(el, text, totalMs) {
     const typingMs = Math.min(totalMs * 0.62, text.length * 38, 5200);
-    const perChar  = typingMs / text.length;
+    const perChar  = Math.max(typingMs / text.length, 12);
     let i = 0;
     const tick = setInterval(() => {
       el.textContent = text.slice(0, ++i);
@@ -906,42 +1057,50 @@ export class CinematicPlayer {
     }, perChar);
   }
 
-  // ── 進度條 ────────────────────────────────────────────────
-  _updateProgress() {
-    const pct = (this._doneBeat / this._totalBeats) * 100;
+  // ── 進度條（本場 beats 進度） ────────────────────────────
+  _updateProgress(done, total) {
     const bar = document.getElementById('cin-progress-fill');
-    if (bar) bar.style.width = `${pct}%`;
+    if (bar) bar.style.width = total > 0 ? `${(done / total) * 100}%` : '0%';
   }
 
   // ── 結局蓋板 ──────────────────────────────────────────────
-  _showEnding() {
-    const stage = document.getElementById('cin-stage');
+  _showEnding(outcome = 'good') {
+    const isGood = outcome === 'good';
+    const stage  = document.getElementById('cin-stage');
     const overlay = document.createElement('div');
     overlay.id = 'cin-ending-overlay';
+
+    const clues  = isGood ? '📋 當鋪收據 · 🏦 電匯紀錄' : '🏦 電匯紀錄';
+    const result = isGood ? '完整破案' : '遲來的線索';
+    const money  = isGood ? 'NT$620,000' : '追回 NT$0';
+    const badge  = isGood
+      ? '<span class="cin-ep-badge">✓ 第零章 完整通關</span>'
+      : '<span class="cin-ep-badge" style="background:rgba(180,80,60,0.12);border-color:rgba(200,100,80,0.3);color:rgba(220,150,130,0.9);">第零章 完成（普通結局）</span>';
+    const tags   = isGood
+      ? `<span class="cin-ep-tag">主動蒐集</span><span class="cin-ep-tag">推理判斷</span><span class="cin-ep-tag">識破詐騙</span>`
+      : `<span class="cin-ep-tag">蒐集線索</span><span class="cin-ep-tag">謹慎判斷</span>`;
+
     overlay.innerHTML = `
       <div class="cin-ending-card">
         <h2>📊 偵探紀錄</h2>
-        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">完整破案</span></div>
-        <div class="cin-ep-row"><span class="cin-ep-key">線索收集</span><span class="cin-ep-val">📋 當鋪收據 · 🏦 電匯紀錄</span></div>
-        <div class="cin-ep-row">
-          <span class="cin-ep-key">行為標籤</span>
-          <span class="cin-ep-val">
-            <span class="cin-ep-tag">主動蒐集</span>
-            <span class="cin-ep-tag">推理判斷</span>
-            <span class="cin-ep-tag">識破詐騙</span>
-          </span>
-        </div>
-        <div class="cin-ep-row"><span class="cin-ep-key">追回金額</span><span class="cin-ep-val">NT$620,000</span></div>
-        <div><span class="cin-ep-badge">✓ 第零章 完成</span></div>
-        <button id="cin-replay-btn">重新播放</button>
+        <div class="cin-ep-row"><span class="cin-ep-key">結局</span><span class="cin-ep-val">${result}</span></div>
+        <div class="cin-ep-row"><span class="cin-ep-key">線索收集</span><span class="cin-ep-val">${clues}</span></div>
+        <div class="cin-ep-row"><span class="cin-ep-key">行為標籤</span><span class="cin-ep-val">${tags}</span></div>
+        <div class="cin-ep-row"><span class="cin-ep-key">追回金額</span><span class="cin-ep-val">${money}</span></div>
+        <div>${badge}</div>
+        <button id="cin-replay-btn">重新選擇</button>
       </div>`;
+
     stage.appendChild(overlay);
 
     document.getElementById('cin-replay-btn').addEventListener('click', () => {
       overlay.remove();
-      this._si = 0; this._bi = 0; this._doneBeat = 0;
+      this._sceneId     = this._startId;
+      this._bi          = 0;
+      this._sceneNum    = 0;
+      this._choicesMade = [];
       this._buildLayout();
-      this._playBeat();
+      this._enterScene(this._startId);
     });
   }
 }
