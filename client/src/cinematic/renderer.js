@@ -26,11 +26,46 @@ const CSS = `
   position: relative;
   overflow: hidden;
 }
-#cin-scene-panel svg {
+/* #cin-scene-art 覆蓋整個面板，transition filter 讓整體氛圍可以隨 beat 變化 */
+#cin-scene-art {
+  position: absolute; inset: 0;
+  transition: filter 1.4s ease;
+}
+#cin-scene-art svg {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   display: block;
 }
+
+/* ── 場景 × Beat 氛圍調整 ─── */
+/* dawn */
+#cin-scene-art[data-scene="dawn"][data-beat="2"] { filter: brightness(1.08); }
+#cin-scene-art[data-scene="dawn"][data-beat="3"] { filter: brightness(1.12) sepia(0.08); }
+/* diary */
+#cin-scene-art[data-scene="diary"][data-beat="1"] { filter: brightness(1.18) contrast(1.06); }
+#cin-scene-art[data-scene="diary"][data-beat="2"] { filter: brightness(1.14) contrast(1.1) sepia(0.12); }
+/* shop */
+#cin-scene-art[data-scene="shop"][data-beat="2"] { filter: brightness(0.92) sepia(0.06); }
+#cin-scene-art[data-scene="shop"][data-beat="3"] { filter: brightness(1.08) sepia(0.05); }
+/* pawn */
+#cin-scene-art[data-scene="pawn"][data-beat="1"] { filter: brightness(1.06) sepia(0.08); }
+#cin-scene-art[data-scene="pawn"][data-beat="3"] { filter: brightness(1.1) sepia(0.12) saturate(1.1); }
+/* bank — 逐漸緊張 */
+#cin-scene-art[data-scene="bank"][data-beat="2"] { filter: brightness(0.92) hue-rotate(-6deg); }
+#cin-scene-art[data-scene="bank"][data-beat="3"] { filter: brightness(0.87) hue-rotate(-10deg) saturate(1.12); }
+#cin-scene-art[data-scene="bank"][data-beat="5"] { filter: brightness(0.83) sepia(0.1); }
+/* bank_lite */
+#cin-scene-art[data-scene="bank_lite"][data-beat="1"] { filter: brightness(0.9) hue-rotate(-8deg); }
+#cin-scene-art[data-scene="bank_lite"][data-beat="2"] { filter: brightness(0.85) sepia(0.1); }
+/* police */
+#cin-scene-art[data-scene="police_full"][data-beat="2"] { filter: brightness(1.1); }
+#cin-scene-art[data-scene="police_full"][data-beat="3"] { filter: brightness(1.18) contrast(1.06); }
+#cin-scene-art[data-scene="police_lite"][data-beat="2"] { filter: brightness(1.12) contrast(1.06); }
+/* reunion — 逐漸暖場 */
+#cin-scene-art[data-scene="reunion"][data-beat="0"] { filter: brightness(0.88); }
+#cin-scene-art[data-scene="reunion"][data-beat="2"] { filter: brightness(1.06) sepia(0.1); }
+#cin-scene-art[data-scene="reunion"][data-beat="3"] { filter: brightness(1.12) sepia(0.18) saturate(1.12); }
+#cin-scene-art[data-scene="reunion"][data-beat="4"] { filter: brightness(1.22) sepia(0.25) saturate(1.2); }
 .scene-label-overlay {
   position: absolute;
   bottom: 1.4rem; left: 1.8rem;
@@ -55,15 +90,15 @@ const CSS = `
   flex-shrink: 0;
 }
 #cin-scene-num {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.28em;
   color: rgba(200,152,58,0.72);
   text-transform: uppercase;
   margin-bottom: 0.28rem;
 }
 #cin-scene-title {
-  font-size: 0.95rem;
-  color: rgba(245,238,222,0.88);
+  font-size: 1.08rem;
+  color: rgba(245,238,222,0.9);
   font-weight: 400;
   letter-spacing: 0.04em;
 }
@@ -89,34 +124,32 @@ const CSS = `
 }
 
 .b-narrate .cin-text {
-  color: rgba(195,205,216,0.87);
-  font-size: 0.87rem;
+  color: rgba(195,205,216,0.9);
+  font-size: 0.97rem;
   line-height: 1.95;
-  font-style: italic;
 }
 .b-dialogue .cin-speaker {
   display: block;
-  font-size: 0.6rem;
-  color: rgba(200,152,58,0.82);
+  font-size: 0.65rem;
+  color: rgba(200,152,58,0.85);
   letter-spacing: 0.18em;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.32rem;
 }
 .b-dialogue .cin-text {
-  color: rgba(242,236,222,0.93);
-  font-size: 0.9rem;
+  color: rgba(242,236,222,0.94);
+  font-size: 1rem;
   line-height: 1.82;
 }
 .b-annotation {
-  padding: 0.65rem 1rem 0.65rem 0.9rem;
+  padding: 0.68rem 1rem 0.68rem 0.9rem;
   border-left: 2.5px solid rgba(200,58,48,0.65);
   background: rgba(200,58,48,0.06);
   border-radius: 0 5px 5px 0;
 }
 .b-annotation .cin-text {
-  color: rgba(255,172,158,0.9);
-  font-size: 0.84rem;
+  color: rgba(255,172,158,0.92);
+  font-size: 0.95rem;
   line-height: 1.85;
-  font-style: italic;
 }
 .b-deduction {
   padding: 0.9rem 1.1rem;
@@ -131,8 +164,8 @@ const CSS = `
   to   { opacity: 1; box-shadow: 0 0 20px rgba(75,138,210,0.12); }
 }
 .b-deduction .cin-text {
-  color: rgba(172,215,255,0.93);
-  font-size: 0.87rem;
+  color: rgba(172,215,255,0.94);
+  font-size: 0.97rem;
   line-height: 1.85;
 }
 .b-epilogue {
@@ -142,8 +175,8 @@ const CSS = `
   border-radius: 6px;
 }
 .b-epilogue .cin-text {
-  color: rgba(155,155,158,0.8);
-  font-size: 0.74rem;
+  color: rgba(155,155,158,0.82);
+  font-size: 0.85rem;
   line-height: 1.9;
   letter-spacing: 0.02em;
 }
@@ -264,6 +297,15 @@ const CSS = `
 @keyframes sceneIn   { from{opacity:0} to{opacity:1} }
 @keyframes sunrise   { from{opacity:0;transform:scaleY(0.8)} to{opacity:1;transform:scaleY(1)} }
 @keyframes embrace   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+@keyframes steamRise {
+  0%   { transform: translateY(0)    scaleX(1);   opacity: 0.28; }
+  60%  { transform: translateY(-22px) scaleX(1.4); opacity: 0.12; }
+  100% { transform: translateY(-42px) scaleX(0.7); opacity: 0; }
+}
+.steam-1 { animation: steamRise 3.2s ease-in-out infinite; }
+.steam-2 { animation: steamRise 3.2s ease-in-out infinite 1.1s; }
+.steam-3 { animation: steamRise 3.2s ease-in-out infinite 2.2s; }
 
 .fog-a  { animation: fogDrift  9s  ease-in-out infinite; }
 .fog-b  { animation: fogDrift2 13s ease-in-out infinite 2s; }
@@ -752,6 +794,150 @@ const SCENE_ART = {
   </g>
 </svg>`,
 
+  // 阿明早餐店
+  shop: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sh-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#0e0b08"/>
+      <stop offset="100%" stop-color="#1a1410"/>
+    </linearGradient>
+    <radialGradient id="sh-flame" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#f08828" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="#f08828" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sh-overhead" cx="50%" cy="0%" r="75%">
+      <stop offset="0%"   stop-color="#d0dce8" stop-opacity=".14"/>
+      <stop offset="100%" stop-color="#d0dce8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="sh-blur"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="sh-soft"><feGaussianBlur stdDeviation="5"/></filter>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="800" height="520" fill="url(#sh-bg)"/>
+  <!-- 頂燈環境光 -->
+  <rect width="800" height="520" fill="url(#sh-overhead)"/>
+  <!-- 日光燈管（三條） -->
+  <rect x="90"  y="0" width="155" height="5" fill="#c8dce8" opacity=".22"/>
+  <rect x="322" y="0" width="155" height="5" fill="#c8dce8" opacity=".22"/>
+  <rect x="556" y="0" width="155" height="5" fill="#c8dce8" opacity=".22"/>
+
+  <!-- 牆磚 -->
+  <rect x="0" y="45" width="800" height="265" fill="#120f0a"/>
+  <line x1="0" y1="95"  x2="800" y2="95"  stroke="#1e1a14" stroke-width="1"/>
+  <line x1="0" y1="145" x2="800" y2="145" stroke="#1e1a14" stroke-width="1"/>
+  <line x1="0" y1="195" x2="800" y2="195" stroke="#1e1a14" stroke-width="1"/>
+  <line x1="0" y1="245" x2="800" y2="245" stroke="#1e1a14" stroke-width="1"/>
+  <line x1="80"  y1="45" x2="80"  y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="160" y1="45" x2="160" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="240" y1="45" x2="240" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="320" y1="45" x2="320" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="400" y1="45" x2="400" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="480" y1="45" x2="480" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="560" y1="45" x2="560" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="640" y1="45" x2="640" y2="310" stroke="#1a1610" stroke-width="1"/>
+  <line x1="720" y1="45" x2="720" y2="310" stroke="#1a1610" stroke-width="1"/>
+
+  <!-- 菜單板 -->
+  <rect x="50" y="58" width="195" height="110" fill="#180e08" rx="4"/>
+  <rect x="50" y="58" width="195" height="18"  fill="#3a2010" rx="4"/>
+  <text x="147" y="72" text-anchor="middle" fill="#e8a028" font-size="11" font-family="serif" letter-spacing="3" opacity=".85">阿 明 早 餐</text>
+  <rect x="65"  y="90"  width="75" height="4" fill="#6a5030" rx="2" opacity=".7"/>
+  <rect x="148" y="90"  width="82" height="4" fill="#6a5030" rx="2" opacity=".6"/>
+  <rect x="65"  y="104" width="90" height="4" fill="#6a5030" rx="2" opacity=".65"/>
+  <rect x="163" y="104" width="68" height="4" fill="#6a5030" rx="2" opacity=".55"/>
+  <rect x="65"  y="118" width="68" height="4" fill="#6a5030" rx="2" opacity=".6"/>
+  <rect x="65"  y="132" width="110" height="4" fill="#6a5030" rx="2" opacity=".55"/>
+  <rect x="183" y="132" width="48" height="4" fill="#6a5030" rx="2" opacity=".5"/>
+  <rect x="65"  y="146" width="80" height="4" fill="#6a5030" rx="2" opacity=".6"/>
+
+  <!-- 牆上日曆 -->
+  <rect x="680" y="62" width="75" height="88" fill="#1c1408" rx="3"/>
+  <rect x="680" y="62" width="75" height="16" fill="#c83020" opacity=".65" rx="3"/>
+  <text x="718" y="74" text-anchor="middle" fill="#f0e0d8" font-size="9" font-family="serif" opacity=".75">4 月</text>
+  <rect x="690" y="88"  width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="706" y="88"  width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="722" y="88"  width="12" height="10" fill="#c03020" rx="1" opacity=".7"/>
+  <rect x="690" y="102" width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="706" y="102" width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="722" y="102" width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="690" y="116" width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="706" y="116" width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="722" y="116" width="12" height="10" fill="#3a3028" rx="1" opacity=".5"/>
+  <rect x="738" y="116" width="6"  height="10" fill="#3a3028" rx="1" opacity=".5"/>
+
+  <!-- 廚台（U 形） -->
+  <rect x="0"   y="310" width="800" height="22" fill="#2a2015"/>
+  <rect x="0"   y="324" width="800" height="196" fill="#1c1610"/>
+  <!-- 台面反光 -->
+  <rect x="0" y="310" width="800" height="4" fill="#d8b870" opacity=".08"/>
+
+  <!-- 爐台 -->
+  <rect x="170" y="258" width="290" height="60" fill="#1a1610" rx="5"/>
+  <!-- 左爐環（大，開火） -->
+  <ellipse cx="248" cy="282" rx="50" ry="16" fill="none" stroke="#302420" stroke-width="4"/>
+  <ellipse cx="248" cy="282" rx="34" ry="10" fill="none" stroke="#2a1e16" stroke-width="2"/>
+  <!-- 火焰光暈 -->
+  <ellipse class="glow" cx="248" cy="286" rx="42" ry="28" fill="url(#sh-flame)" filter="url(#sh-blur)" opacity=".9"/>
+  <!-- 小火焰 -->
+  <path class="lamp" d="M 234 278 Q 239 265 248 274 Q 257 265 262 278" fill="#f09030" opacity=".65"/>
+  <!-- 右爐環（小，關火） -->
+  <ellipse cx="390" cy="282" rx="38" ry="12" fill="none" stroke="#2a2018" stroke-width="3"/>
+  <ellipse cx="390" cy="282" rx="26" ry="8"  fill="none" stroke="#222018" stroke-width="2"/>
+
+  <!-- 炒鍋（左大爐） -->
+  <ellipse cx="248" cy="270" rx="56" ry="19" fill="#0e0c08" stroke="#2a2018" stroke-width="3"/>
+  <ellipse cx="248" cy="267" rx="48" ry="14" fill="#161210"/>
+  <!-- 鍋把 -->
+  <line x1="302" y1="268" x2="348" y2="254" stroke="#3a3020" stroke-width="7" stroke-linecap="round"/>
+  <!-- 蒸氣 -->
+  <path class="steam-1" d="M 232 252 Q 228 238 233 226 Q 238 214 233 202" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path class="steam-2" d="M 248 250 Q 244 236 249 224 Q 254 212 249 200" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path class="steam-3" d="M 264 252 Q 260 238 265 226 Q 270 214 265 202" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 鐵板（右台） -->
+  <rect x="428" y="258" width="110" height="52" fill="#181510" rx="4"/>
+  <!-- 煎蛋（太陽蛋） -->
+  <ellipse cx="483" cy="284" rx="34" ry="18" fill="#e8dfc8" opacity=".82"/>
+  <circle  cx="478" cy="281" r="11"          fill="#e8a020" opacity=".92"/>
+  <circle  cx="478" cy="280" r="5"           fill="#f5c040" opacity=".9"/>
+  <!-- 吐司 -->
+  <rect x="565" y="262" width="50" height="38" fill="#c89848" opacity=".8" rx="3"/>
+  <rect x="568" y="265" width="44" height="32" fill="#d8a850" opacity=".7" rx="2"/>
+  <line x1="568" y1="280" x2="612" y2="280" stroke="#b07830" stroke-width="1" opacity=".5"/>
+
+  <!-- 人物：阿明（後方，廚師帽，在爐前） -->
+  <g transform="translate(268,292)">
+    <ellipse cx="0" cy="-19" rx="15" ry="17" fill="#090706"/>
+    <!-- 廚師帽 -->
+    <rect x="-11" y="-38" width="22" height="8" fill="#0e0c08" rx="2"/>
+    <rect x="-8"  y="-56" width="16" height="22" fill="#0e0c08" rx="7"/>
+    <!-- 圍裙 -->
+    <rect x="-16" y="-3"  width="32" height="52" fill="#090706" rx="4"/>
+    <rect x="-4"  y="-3"  width="8"  height="52" fill="#100e0a" rx="2" opacity=".6"/>
+    <!-- 左手拿鍋鏟 -->
+    <path d="M 16,6 Q 30,12 28,30" stroke="#090706" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <rect x="23" y="27" width="16" height="7" fill="#090706" rx="2" transform="rotate(-18 23 27)"/>
+    <!-- 右手打蛋 -->
+    <path d="M -16,6 Q -30,10 -28,28" stroke="#090706" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <rect x="-14" y="46" width="11" height="28" fill="#090706" rx="3"/>
+    <rect x="2"   y="46" width="11" height="28" fill="#090706" rx="3"/>
+  </g>
+
+  <!-- 人物：偵探（前方，右側，在吧台前） -->
+  <g transform="translate(615,292)">
+    <ellipse cx="0" cy="-20" rx="13" ry="17" fill="#070504"/>
+    <rect x="-16" y="-38" width="32" height="7" fill="#070504" rx="2"/>
+    <rect x="-10" y="-52" width="20" height="17" fill="#070504" rx="3"/>
+    <rect x="-14" y="-4"  width="28" height="50" fill="#070504" rx="4"/>
+    <!-- 手肘放在台上（聽的姿勢） -->
+    <path d="M -14,8 Q -22,22 -18,42" stroke="#070504" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M  14,8 Q  22,20  20,36" stroke="#070504" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <rect x="-10" y="44" width="9"  height="28" fill="#070504" rx="3"/>
+    <rect x="1"   y="44" width="9"  height="28" fill="#070504" rx="3"/>
+  </g>
+</svg>`,
+
   // 重逢結局
   reunion: `<svg viewBox="0 0 800 520" preserveAspectRatio="xMidYMid slice" class="scene-in" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -904,6 +1090,8 @@ export class CinematicPlayer {
     const title = document.getElementById('cin-scene-title');
 
     art.innerHTML   = SCENE_ART[scene.sceneKey] || '';
+    art.dataset.scene = scene.sceneKey;
+    art.dataset.beat  = '0';
     label.textContent = scene.title;
     num.textContent   = scene.title.match(/^第.+?場/)?.[0] ?? `第 ${this._sceneNum} 場`;
     title.textContent = scene.title.replace(/^第.+?· /, '');
@@ -1028,6 +1216,10 @@ export class CinematicPlayer {
 
     container.appendChild(el);
     container.scrollTop = container.scrollHeight;
+
+    // beat-reactive 場景動畫：更新 data-beat
+    const art = document.getElementById('cin-scene-art');
+    if (art) art.dataset.beat = String(this._bi);
 
     this._typewriter(el.querySelector('.cin-text'), beat.text, beat.ms);
   }
